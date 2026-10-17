@@ -1,0 +1,250 @@
+/* ==========================================================================
+   ChurchTools-Farb-Referenz (aufgelöst, NICHT zur Verwendung gedacht)
+   Quelle: CT-Theme (Tailwind v4) – alle var()-Ketten aufgelöst zu Hex
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Roh-Palette (die Basis, auf die CT mappt)
+   Eine Zeile pro Familie: Schatten-Nr + Hex → VS Code zeigt alle Swatches
+   -------------------------------------------------------------------------- */
+
+/* slate */  50 #f8fafc · 100 #f1f5f9 · 200 #e2e8f0 · 300 #cbd5e1 · 400 #94a3b8 · 500 #64748b · 600 #475569 · 700 #334155 · 800 #1e293b · 900 #0f172a · 950 #020617
+/* zinc */   50 #fafafa · 100 #f4f4f5 · 200 #e4e4e7 · 300 #d4d4d8 · 400 #a1a1aa · 500 #71717a · 600 #52525b · 700 #3f3f46 · 800 #27272a · 900 #18181b · 950 #09090b
+/* red */    50 #fef2f2 · 100 #fee2e2 · 200 #fecaca · 300 #fca5a5 · 400 #f87171 · 500 #ef4444 · 600 #dc2626 · 700 #b91c1c · 800 #991b1b · 900 #7f1d1d · 950 #450a0a
+/* orange */ 50 #fff7ed · 100 #ffedd5 · 200 #fed7aa · 300 #fdba74 · 400 #fb923c · 500 #f97316 · 600 #ea580c · 700 #c2410c · 800 #9a3412 · 900 #7c2d12 · 950 #431407
+/* amber */  50 #fffbeb · 100 #fef3c7 · 200 #fde68a · 300 #fcd34d · 400 #fbbf24 · 500 #f59e0b · 600 #d97706 · 700 #b45309 · 800 #92400e · 900 #78350f · 950 #451a03
+/* yellow */ 50 #fefce8 · 100 #fef9c3 · 200 #fef08a · 300 #fde047 · 400 #facc15 · 500 #eab308 · 600 #ca8a04 · 700 #a16207 · 800 #854d0e · 900 #713f12 · 950 #422006
+/* lime */   50 #f7fee7 · 100 #ecfccb · 200 #d9f99d · 300 #bef264 · 400 #a3e635 · 500 #84cc16 · 600 #65a30d · 700 #4d7c0f · 800 #3f6212 · 900 #365314 · 950 #1a2e05
+/* green */  50 #f0fdf4 · 100 #dcfce7 · 200 #bbf7d0 · 300 #86efac · 400 #4ade80 · 500 #22c55e · 600 #16a34a · 700 #15803d · 800 #166534 · 900 #14532d · 950 #052e16
+/* emerald */50 #ecfdf5 · 100 #d1fae5 · 200 #a7f3d0 · 300 #6ee7b7 · 400 #34d399 · 500 #10b981 · 600 #059669 · 700 #047857 · 800 #065f46 · 900 #064e3b · 950 #022c22
+/* teal */   50 #f0fdfa · 100 #ccfbf1 · 200 #99f6e4 · 300 #5eead4 · 400 #2dd4bf · 500 #14b8a6 · 600 #0d9488 · 700 #0f766e · 800 #115e59 · 900 #134e4a · 950 #042f2e
+/* cyan */   50 #ecfeff · 100 #cffafe · 200 #a5f3fc · 300 #67e8f9 · 400 #22d3ee · 500 #06b6d4 · 600 #0891b2 · 700 #0e7490 · 800 #155e75 · 900 #164e63 · 950 #083344
+/* sky */    50 #f0f9ff · 100 #e0f2fe · 200 #bae6fd · 300 #7dd3fc · 400 #38bdf8 · 500 #0ea5e9 · 600 #0284c7 · 700 #0369a1 · 800 #075985 · 900 #0c4a6e · 950 #082f49
+/* blue */   50 #eff6ff · 100 #dbeafe · 200 #bfdbfe · 300 #93c5fd · 400 #60a5fa · 500 #3b82f6 · 600 #2563eb · 700 #1d4ed8 · 800 #1e40af · 900 #1e3a8a · 950 #172554
+/* indigo */ 50 #eef2ff · 100 #e0e7ff · 200 #c7d2fe · 300 #a5b4fc · 400 #818cf8 · 500 #6366f1 · 600 #4f46e5 · 700 #4338ca · 800 #3730a3 · 900 #312e81 · 950 #1e1b4b
+/* violet */ 50 #f5f3ff · 100 #ede9fe · 200 #ddd6fe · 300 #c4b5fd · 400 #a78bfa · 500 #8b5cf6 · 600 #7c3aed · 700 #6d28d9 · 800 #5b21b6 · 900 #4c1d95 · 950 #2e1065
+/* purple */ 50 #faf5ff · 100 #f3e8ff · 200 #e9d5ff · 300 #d8b4fe · 400 #c084fc · 500 #a855f7 · 600 #9333ea · 700 #7e22ce · 800 #6b21a8 · 900 #581c87 · 950 #3b0764
+/* fuchsia */50 #fdf4ff · 100 #fae8ff · 200 #f5d0fe · 300 #f0abfc · 400 #e879f9 · 500 #d946ef · 600 #c026d3 · 700 #a21caf · 800 #86198f · 900 #701a75 · 950 #4a044e
+/* pink */   50 #fdf2f8 · 100 #fce7f3 · 200 #fbcfe8 · 300 #f9a8d4 · 400 #f472b6 · 500 #ec4899 · 600 #db2777 · 700 #be185d · 800 #9d174d · 900 #831843 · 950 #500724
+/* rose */   50 #fff1f2 · 100 #ffe4e6 · 200 #fecdd3 · 300 #fda4af · 400 #fb7185 · 500 #f43f5e · 600 #e11d48 · 700 #be123c · 800 #9f1239 · 900 #881337 · 950 #4c0519
+
+/* --------------------------------------------------------------------------
+   2. Merkregel für alle Farbfamilien (red, orange, amber, … rose)
+
+   HELLMODUS:
+     *-b-pale      = <farbe>-100      *-primary    = <farbe>-950
+     *-b-bright    = <farbe>-500      *-secondary  = <farbe>-900
+     *-b-contrast  = <farbe>-900      *-tertiary   = <farbe>-900
+     *-bright      = <farbe>-500      *-disabled   = <farbe>-300
+     *-inverted    = #ffffff          *-divider    = <farbe>-200
+     *-interactive = <farbe>-300
+
+   DARKMODE (.dark):
+     *-b-pale      = <farbe>-900      *-primary    = <farbe>-100
+     *-b-bright    = <farbe>-600      *-secondary  = <farbe>-200
+     *-b-contrast  = <farbe>-900      *-tertiary   = <farbe>-200
+     *-bright      = <farbe>-400      *-disabled   = (hell: -300 / dark: -500 bzw. -600)
+     *-inverted    = #ffffff          *-divider    = <farbe>-700
+     *-interactive = <farbe>-600
+   -------------------------------------------------------------------------- */
+
+
+/* ==========================================================================
+   3. Semantic-Variablen – HELLMODUS (die, die du in deiner CSS nutzt)
+   ========================================================================== */
+
+/* ---- gray (→ alles slate) ---- */
+--color-gray-50:          #f8fafc;  /* slate-50   */
+--color-gray-100:         #f1f5f9;  /* slate-100  */
+--color-gray-200:         #e2e8f0;  /* slate-200  */
+--color-gray-300:         #cbd5e1;  /* slate-300  */
+--color-gray-400:         #94a3b8;  /* slate-400  */
+--color-gray-500:         #64748b;  /* slate-500  */
+--color-gray-600:         #475569;  /* slate-600  */
+--color-gray-700:         #334155;  /* slate-700  */
+--color-gray-800:         #1e293b;  /* slate-800  */
+--color-gray-900:         #0f172a;  /* slate-900  */
+--color-gray-950:         #020617;  /* slate-950  */
+--color-gray-b-pale:      #f1f5f9;  /* slate-100  */
+--color-gray-b-bright:    #94a3b8;  /* slate-400  */
+--color-gray-b-contrast:  #1e293b;  /* slate-800  */
+--color-gray-bright:      #475569;  /* slate-600  */
+--color-gray-primary:     #0f172a;  /* slate-900  */
+--color-gray-secondary:   #475569;  /* slate-600  */
+--color-gray-tertiary:    #94a3b8;  /* slate-400  */
+--color-gray-disabled:    #94a3b8;  /* slate-400  */
+--color-gray-inverted:    #ffffff;
+--color-gray-divider:     #e2e8f0;  /* slate-200  */
+--color-gray-interactive: #cbd5e1;  /* slate-300  */
+
+/* ---- accent (→ alles blue) – deine Haupt-Interaktionsfarbe ---- */
+--color-accent-300:         #93c5fd;  /* blue-300 */
+--color-accent-600:         #2563eb;  /* blue-600 */
+--color-accent-700:         #1d4ed8;  /* blue-700 */
+--color-accent-800:         #1e40af;  /* blue-800 */
+--color-accent-b-pale:      #dbeafe;  /* blue-100 */
+--color-accent-b-bright:    #2563eb;  /* blue-600 */
+--color-accent-b-contrast:  #1e3a8a;  /* blue-900 */
+--color-accent-bright:      #2563eb;  /* blue-600 ← dein Nav-.active, Buttons */
+--color-accent-primary:     #172554;  /* blue-950 */
+--color-accent-secondary:   #1e3a8a;  /* blue-900 */
+--color-accent-tertiary:    #1e3a8a;  /* blue-900 */
+--color-accent-disabled:    #93c5fd;  /* blue-300 */
+--color-accent-inverted:    #ffffff;  /* Text auf accent-Hintergrund */
+--color-accent-divider:     #bfdbfe;  /* blue-200 */
+--color-accent-interactive: #93c5fd;  /* blue-300 */
+
+/* ---- info (= accent, einzige Ausnahme: info-b-bright → blue-500) ---- */
+--color-info-bright:      #2563eb;  /* blue-600 */
+--color-info-b-bright:    #3b82f6;  /* blue-500 (weicht ab!) */
+--color-info-primary:     #172554;  /* blue-950 */
+--color-info-divider:     #bfdbfe;  /* blue-200 */
+--color-info-inverted:    #ffffff;
+
+/* ---- success / constructive (→ green) ---- */
+--color-success-b-pale:      #dcfce7;  /* green-100 */
+--color-success-bright:      #22c55e;  /* green-500 */
+--color-success-primary:     #052e16;  /* green-950 */
+--color-success-divider:     #bbf7d0;  /* green-200 */
+--color-success-inverted:    #ffffff;
+--color-constructive-*:                /* identisch zu success */
+
+/* ---- warning (→ yellow) ---- */
+--color-warning-b-pale:   #fef9c3;  /* yellow-100 */
+--color-warning-bright:   #eab308;  /* yellow-500 */
+--color-warning-primary:  #422006;  /* yellow-950 */
+--color-warning-divider:  #fef08a;  /* yellow-200 */
+--color-warning-inverted: #ffffff;
+
+/* ---- critical (→ orange) ---- */
+--color-critical-b-pale:   #ffedd5;  /* orange-100 */
+--color-critical-bright:   #f97316;  /* orange-500 */
+--color-critical-primary:  #431407;  /* orange-950 */
+--color-critical-divider:  #fed7aa;  /* orange-200 */
+--color-critical-inverted: #ffffff;
+
+/* ---- error / destructive (→ red) – deine Fehlerkarten ---- */
+--color-error-b-pale:      #fee2e2;  /* red-100  */
+--color-error-b-bright:    #ef4444;  /* red-500  */
+--color-error-b-contrast:  #7f1d1d;  /* red-900  */
+--color-error-bright:      #ef4444;  /* red-500  ← Fehlertext */
+--color-error-primary:     #450a0a;  /* red-950  */
+--color-error-secondary:   #7f1d1d;  /* red-900  */
+--color-error-tertiary:    #7f1d1d;  /* red-900  */
+--color-error-disabled:    #fca5a5;  /* red-300  */
+--color-error-inverted:    #ffffff;
+--color-error-divider:     #fecaca;  /* red-200  ← Fehlerkarten-Rahmen */
+--color-error-interactive: #fca5a5;  /* red-300  */
+--color-destructive-*:               /* identisch zu error */
+
+/* ---- basic (→ slate) – neutral like gray ---- */
+--color-basic-b-pale:      #f8fafc;  /* slate-50  */
+--color-basic-bright:      #475569;  /* slate-600 */
+--color-basic-primary:     #0f172a;  /* slate-900 */
+--color-basic-divider:     #e2e8f0;  /* slate-200 */
+
+/* ---- magic (→ violet) ---- */
+--color-magic-bright:     #8b5cf6;  /* violet-500 */
+--color-magic-primary:    #2e1065;  /* violet-950 */
+--color-magic-divider:    #ddd6fe;  /* violet-200 */
+
+/* ---- Flächen (dein Layout!) ---- */
+--color-background-primary:   #f1f5f9;  /* slate-100 ← Header + Sidebar */
+--color-background-secondary: #e2e8f0;  /* slate-200 ← Content-Bereich   */
+--color-foreground-primary:   #ffffff;
+--color-foreground-secondary: #f8fafc;  /* slate-50  */
+--color-foreground-elevated:  #ffffff;  /* ← deine .card */
+
+
+/* ==========================================================================
+   4. Semantic-Variablen – DARKMODE (CT setzt .dark auf <html>)
+   ========================================================================== */
+.dark {
+  /* ---- gray (→ slate/zinc-Mix!) ---- */
+  --color-gray-b-pale:      #334155;  /* slate-700 */
+  --color-gray-b-bright:    #64748b;  /* slate-500 */
+  --color-gray-b-contrast:  #0f172a;  /* slate-900 (via gray-900) */
+  --color-gray-bright:      #94a3b8;  /* slate-400 */
+  --color-gray-primary:     #f8fafc;  /* slate-50  ← Textfarbe invertiert! */
+  --color-gray-secondary:   #cbd5e1;  /* slate-300 */
+  --color-gray-tertiary:    #94a3b8;  /* slate-400 */
+  --color-gray-disabled:    #64748b;  /* slate-500 */
+  --color-gray-divider:     #3f3f46;  /* zinc-700  ← Achtung: zinc! */
+  --color-gray-interactive: #52525b;  /* zinc-600  ← Achtung: zinc! */
+
+  /* ---- accent (→ blue) ---- */
+  --color-accent-b-pale:      #1e3a8a;  /* blue-900 */
+  --color-accent-b-bright:    #1d4ed8;  /* blue-700 */
+  --color-accent-b-contrast:  #1e3a8a;  /* blue-900 */
+  --color-accent-bright:      #3b82f6;  /* blue-500 ← .active wird heller! */
+  --color-accent-primary:     #dbeafe;  /* blue-100 */
+  --color-accent-secondary:   #bfdbfe;  /* blue-200 */
+  --color-accent-tertiary:    #bfdbfe;  /* blue-200 */
+  --color-accent-disabled:    #93c5fd;  /* blue-300 */
+  --color-accent-inverted:    #ffffff;
+  --color-accent-divider:     #1d4ed8;  /* blue-700 */
+  --color-accent-interactive: #2563eb;  /* blue-600 */
+
+  /* ---- info (= accent-Darkmode) ---- */
+  --color-info-bright:      #3b82f6;  /* blue-500 */
+  --color-info-b-bright:    #1d4ed8;  /* blue-700 */
+  --color-info-primary:     #dbeafe;  /* blue-100 */
+  --color-info-divider:     #1d4ed8;  /* blue-700 */
+
+  /* ---- success (→ green) ---- */
+  --color-success-b-pale:   #14532d;  /* green-900 */
+  --color-success-bright:   #4ade80;  /* green-400 */
+  --color-success-primary:  #dcfce7;  /* green-100 */
+  --color-success-divider:  #15803d;  /* green-700 */
+
+  /* ---- warning (→ yellow) ---- */
+  --color-warning-b-pale:   #713f12;  /* yellow-900 */
+  --color-warning-bright:   #facc15;  /* yellow-400 */
+  --color-warning-primary:  #fef9c3;  /* yellow-100 */
+  --color-warning-divider:  #a16207;  /* yellow-700 */
+
+  /* ---- critical (→ orange) ---- */
+  --color-critical-b-pale:   #7c2d12;  /* orange-900 */
+  --color-critical-bright:   #fb923c;  /* orange-400 */
+  --color-critical-primary:  #ffedd5;  /* orange-100 */
+  --color-critical-divider:  #c2410c;  /* orange-700 */
+
+  /* ---- error (→ red) ---- */
+  --color-error-b-pale:      #7f1d1d;  /* red-900 */
+  --color-error-b-bright:    #dc2626;  /* red-600 */
+  --color-error-b-contrast:  #7f1d1d;  /* red-900 */
+  --color-error-bright:      #f87171;  /* red-400 ← Fehlertext im Dark */
+  --color-error-primary:     #fee2e2;  /* red-100 */
+  --color-error-secondary:   #fecaca;  /* red-200 */
+  --color-error-tertiary:    #fecaca;  /* red-200 */
+  --color-error-disabled:    #64748b;  /* slate-500 */
+  --color-error-inverted:    #ffffff;
+  --color-error-divider:     #b91c1c;  /* red-700  ← Fehlerkarten-Rahmen Dark */
+  --color-error-interactive: #dc2626;  /* red-600 */
+
+  /* ---- basic (→ slate/zinc) ---- */
+  --color-basic-b-pale:      #334155;  /* slate-700 */
+  --color-basic-b-bright:    #64748b;  /* slate-500 */
+  --color-basic-b-contrast:  #0f172a;  /* slate-900 */
+  --color-basic-bright:      #cbd5e1;  /* slate-300 */
+  --color-basic-primary:     #f8fafc;  /* slate-50  */
+  --color-basic-secondary:   #cbd5e1;  /* slate-300 */
+  --color-basic-tertiary:    #94a3b8;  /* slate-400 */
+  --color-basic-disabled:    #64748b;  /* slate-500 */
+  --color-basic-divider:     #3f3f46;  /* zinc-700  */
+  --color-basic-interactive: #52525b;  /* zinc-600  */
+
+  /* ---- magic (→ violet) ---- */
+  --color-magic-b-pale:      #4c1d95;  /* violet-900 */
+  --color-magic-b-bright:    #7c3aed;  /* violet-600 */
+  --color-magic-bright:      #a78bfa;  /* violet-400 */
+  --color-magic-primary:     #ede9fe;  /* violet-100 */
+  --color-magic-divider:     #6d28d9;  /* violet-700 */
+
+  /* ---- Flächen im Darkmode ---- */
+  --color-background-primary:   #18181b;  /* zinc-900 ← Header + Sidebar */
+  --color-background-secondary: #18181b;  /* zinc-900 ← Content (GLEICH!) */
+  --color-foreground-primary:   #27272a;  /* zinc-800 */
+  --color-foreground-secondary: #18181b;  /* zinc-900 */
+  --color-foreground-elevated:  #3f3f46;  /* zinc-700 ← deine .card */
+}

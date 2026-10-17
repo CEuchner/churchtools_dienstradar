@@ -1,0 +1,209 @@
+/* =========================================================
+   DienstRadar – main.css
+   Alle Werte aus ChurchTools-Theme-Tokens (--color-*, --text-*,
+   --radius-*, --spacing), Fallbacks = aufgelöste CT-Werte (Tailwind)
+   ========================================================= */
+
+/* Root: volle Höhe, damit Sidebar/Content bis unten laufen */
+.dr-root {
+  display: flex;
+  flex-direction: column;
+  height: var(--dr-height, 100vh);  /* von main.ts gesetzt */
+  overflow: hidden;                 /* die Seite selbst scrollt NIE */
+}
+
+/* Titel – CT: display-m = 1.75rem (28px), fett */
+.dr-root h1 {
+  color: var(--color-gray-primary, #0f172a);
+  margin-bottom: calc(var(--spacing, 0.25rem) * 2.5); /* 10px */
+  font-size: var(--text-display-m, 1.75rem);                       /* 28px */
+  line-height: var(--text-display-m--line-height, 2.25rem);        /* 36px */
+  font-weight: var(--text-display-m--font-weight, 700);            /* bold */
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing, 0.25rem) * 2);                          /* 8px */
+}
+
+/* Icon – 24px liegt zwischen CTs icon-xl (20px) und icon-2xl (26px) */
+.dr-root h1 svg {
+  width: 1.5rem;   /* 24px – kein exakter CT-Token, siehe Hinweis */
+  height: 1.5rem;
+  flex-shrink: 0;
+  color: currentColor;
+  animation: radar-pulse 3s infinite ease-in-out;
+}
+
+/* Root-Layout Wrapper */
+.dr-root .layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;  
+  min-height: 0;
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  color: var(--color-gray-primary, #0f172a);
+  background: var(--color-background-secondary, #e2e8f0);
+}
+
+/* Header (nur Titelzeile) */
+.dr-root .header {
+  padding: calc(var(--spacing, 0.25rem) * 4) calc(var(--spacing, 0.25rem) * 6); /* 1rem 1.5rem */
+  background: var(--color-background-primary, #f1f5f9);
+  border-bottom: 1px solid var(--color-gray-divider, #e2e8f0);
+}
+
+/* body: Sidebar links + Content rechts */
+.dr-root .body {
+  display: grid;
+  grid-template-columns: 220px 1fr;  
+  grid-template-rows: minmax(0, 1fr); 
+  flex: 1;
+  min-height: 0;
+}
+
+/* Navigation (vertikal, linke Spalte) */
+.dr-root .nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing, 0.25rem);
+  padding: calc(var(--spacing, 0.25rem) * 4) calc(var(--spacing, 0.25rem) * 3); /* 1rem 0.75rem */
+  background: var(--color-background-primary, #f1f5f9);
+  border-right: 1px solid var(--color-gray-divider, #e2e8f0);
+  overflow-y: auto;
+}
+
+/* Trennlinie zwischen Hauptnavigation und Footer-Bereich */
+.dr-root .nav-divider {
+  height: 1px;
+  background: var(--color-gray-divider, #e2e8f0);
+  margin: calc(var(--spacing, 0.25rem) * 2) calc(var(--spacing, 0.25rem) * 1); /* vertikal 8px, seitlich 4px */  
+  margin-top: auto;
+}
+
+/* Burger-Button: auf Desktop unsichtbar */
+.dr-root .nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: calc(var(--spacing, 0.25rem) * 1);
+  color: var(--color-gray-primary, #0f172a);
+}
+
+.dr-root .nav-toggle svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Nav-Link – CT: body-m = 0.875rem (14px) */
+.dr-root .link {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing, 0.25rem) * 2);  /* 8px Abstand Icon ↔ Text */
+  color: var(--color-gray-secondary, #475569);
+  text-decoration: none;
+  padding: calc(var(--spacing, 0.25rem) * 2.5) calc(var(--spacing, 0.25rem) * 3); /* 0.6rem 0.75rem */
+  border-radius: var(--radius-md, 0.375rem);                            /* 6px */
+  transition: background 0.2s, color 0.2s;
+  font-size: var(--text-body-m, 0.875rem);                              /* 14px */
+  line-height: var(--text-body-m--line-height, 1.25rem);                /* 20px */
+  font-weight: var(--font-weight-normal, 400);
+}
+
+.dr-root .link svg {
+  width: 1em;   /* 1em = aktuelle Schriftgröße → skaliert automatisch mit! */
+  height: 1em;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+/* Hover: color-mix, damit der Effekt auch im Dark Mode sichtbar bleibt */
+.dr-root .link:hover {
+  background: color-mix(in srgb, var(--color-gray-interactive, #cbd5e1) 25%, transparent);
+  color: var(--color-gray-primary, #0f172a);
+}
+
+.dr-root .link.active {
+  background: var(--color-accent-b-pale, #dbeafe);
+  color: var(--color-accent-primary, #172554);
+  font-weight: var(--font-weight-medium, 500);
+}
+
+.dr-root .user {
+  font-size: var(--text-body-s, 0.8125rem);                /* 13px */
+  line-height: var(--text-body-s--line-height, 1.125rem);
+  color: var(--color-gray-secondary, #475569);
+}
+
+/* Content-Bereich */
+.dr-root .content {
+  padding: calc(var(--spacing, 0.25rem) * 6);  /* 1.5rem */
+  overflow-y: auto;
+  background: var(--color-background-secondary, #e2e8f0);
+}
+
+/* Karten-Style für Seiten – CT: radius-lg = 8px */
+.dr-root .card {
+  background: var(--color-foreground-elevated, #ffffff);
+  padding: calc(var(--spacing, 0.25rem) * 5);  /* 1.25rem */
+  border-radius: var(--radius-lg, 0.5rem);     /* 8px */
+  border: 1px solid var(--color-gray-divider, #e2e8f0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  margin-bottom: calc(var(--spacing, 0.25rem) * 4);  /* 1rem */
+}
+
+/* Karten-Überschrift – CT: body-l-emphasized */
+.dr-root .card h2 {
+  margin: 0 0 calc(var(--spacing, 0.25rem) * 3);
+  font-size: var(--text-body-l-emphasized, 1.125rem);            /* 18px */
+  line-height: var(--text-body-l-emphasized--line-height, 1.625rem);
+  font-weight: var(--text-body-l-emphasized--font-weight, 700);
+  color: var(--color-gray-primary, #0f172a);
+}
+
+/* Fließtext in Karten */
+.dr-root .card p {
+  line-height: var(--text-body-m--line-height, 1.25rem);
+  margin-bottom: calc(var(--spacing, 0.25rem) * 2);
+}
+
+/* Tablet/Mobile (CT: breakpoint-md = 48rem = 768px):
+   Sidebar wird zum Burger-gesteuerten Drawer */
+@media (max-width: 48rem) {
+  .dr-root .nav-toggle {
+    display: flex;   /* Burger einblenden */
+  }
+
+  .dr-root .header .container {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing, 0.25rem) * 2);
+  }
+
+  .dr-root .body {
+    grid-template-columns: 1fr;   /* nur noch eine Spalte */
+  }
+
+  /* Nav wird zum fixen Panel links, standardmäßig rausgeschoben */
+  .dr-root .nav {
+    position: fixed;
+    top: var(--dr-top, 0px);
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    border-right: 1px solid var(--color-gray-divider, #e2e8f0);
+    padding-top: calc(var(--spacing, 0.25rem) * 6);
+  }
+
+  .dr-root .nav.open {
+    transform: translateX(0);   /* ← der Toggle-Zustand */
+  }
+}
+
+@keyframes radar-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
