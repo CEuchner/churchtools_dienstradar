@@ -1,3 +1,5 @@
+export const title = 'Statistiken';
+
 export default function Statistics() {
   return `
     <div class="card">

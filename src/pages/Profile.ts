@@ -1,5 +1,7 @@
 import { routeHref } from '../utils/base';
 
+export const title = 'Profil';
+
 export default function Profile() {
   return `
     <div class="card">

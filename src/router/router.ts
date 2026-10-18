@@ -1,5 +1,6 @@
 import { updateActiveLink } from '../components/Header';
 import { routeHref } from '../utils/base';
+import { getCachedChurchName } from '../api/info';
 
 /**
  * Ein Seitenmodul liefert Markup und optional Lebenszyklus-Hooks:
@@ -12,6 +13,7 @@ import { routeHref } from '../utils/base';
  */
 interface PageModule {
   default: () => string;
+  title?: string;
   init?: () => void | Promise<void>;
   destroy?: () => void | Promise<void>;
 }
@@ -102,11 +104,22 @@ export async function renderRoute() {
     // Ab hier ist dieses Modul das aktive – destroy() beim nächsten Wechsel
     activeModule = PageModule;
 
+    const extensionTitle = 'DienstRadar';
+    const church = getCachedChurchName();
+    const suffix = church ? `${extensionTitle} · ${church}` : extensionTitle;
+
+    document.title = PageModule.title
+      ? `${PageModule.title} · ${suffix}`
+      : suffix;
+
+    await PageModule.init?.();
+
     // Lebenszyklus: DOM-Refs, Listener und Daten erst jetzt anfassen
     await PageModule.init?.();
   } catch (err) {
     if (token !== renderToken) return;
 
+    document.title = 'DienstRadar';
     activeModule = null;
     console.error('💥 Fehler beim Laden der Seite:', err);
     contentContainer.innerHTML = `

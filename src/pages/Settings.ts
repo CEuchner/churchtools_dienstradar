@@ -1,3 +1,5 @@
+export const title = 'Einstellungen';
+
 export default function Settings() {
   return `
     <div class="card">

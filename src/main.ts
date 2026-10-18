@@ -2,6 +2,7 @@
 import { churchtoolsClient } from '@churchtools/churchtools-client';
 import { renderHeader, renderNav, initNavToggle } from './components/Header';
 import { initRouter } from './router/router';
+import { getChurchName } from './api/info';
 import './styles/base.css';
 import './styles/layout.css';
 import './styles/form.css';
@@ -75,6 +76,8 @@ window.addEventListener('resize', updateRootHeight);
 
 document.querySelector('.header')!.innerHTML = renderHeader();
 document.querySelector('.nav')!.innerHTML = renderNav();
+
+await getChurchName();   // Gemeinde-Name cachen, bevor die erste Route rendert
 
 initRouter();
 initNavToggle();
