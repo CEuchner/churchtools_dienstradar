@@ -1,0 +1,359 @@
+/* =========================================================
+   DienstRadar – form.css
+   Geteilte Formular-Bausteine: Felder, Buttons, Autocomplete,
+   Dienst-Auswahl, Modal.
+   ========================================================= */
+
+/* ── Felder ─────────────────────────────────────────────── */
+
+.dr-root .dr-field {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing, 0.25rem) * 2);
+}
+
+.dr-root .dr-field--nested {
+  gap: calc(var(--spacing, 0.25rem) * 1.5);
+}
+
+/* Direktes Kind, damit Dienst-Labels nicht mitgestylt werden */
+.dr-root .dr-field > label,
+.dr-root .dr-label {
+  font-size: var(--text-body-m, 0.875rem);
+  line-height: var(--text-body-m--line-height, 1.25rem);
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--color-gray-primary, #0f172a);
+}
+
+/* Hauptbeschriftungen der Formularblöcke – gleiche Überschriftenart
+   wie die Karten-Überschriften (body-l-emphasized: 18px, fett) */
+.dr-root .dr-field > .dr-field-heading,
+.dr-root .dr-field-heading {
+  font-size: var(--text-body-l-emphasized, 1.07rem);
+  line-height: var(--text-body-l-emphasized--line-height, 1.625rem);
+  font-weight: var(--text-body-l-emphasized--font-weight, 600);
+  color: var(--color-gray-primary, #0f172a);
+}
+
+.dr-root .dr-input {
+  width: 100%;
+  padding: calc(var(--spacing, 0.25rem) * 2.5) calc(var(--spacing, 0.25rem) * 3);
+  border: 1px solid var(--color-gray-divider, #e2e8f0);
+  border-radius: var(--radius-md, 0.375rem);
+  background: var(--color-foreground-primary, #ffffff);
+  color: var(--color-gray-primary, #0f172a);
+  font-size: var(--text-body-m, 0.875rem);
+  line-height: var(--text-body-m--line-height, 1.25rem);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dr-root .dr-input:focus {
+  outline: none;
+  border-color: var(--color-accent-bright, #2563eb);
+  box-shadow: 0 0 0 3px var(--color-accent-b-pale, #dbeafe);
+}
+
+.dr-root .dr-input:disabled {
+  background: var(--color-background-primary, #f1f5f9);
+  color: var(--color-gray-tertiary, #94a3b8);
+  cursor: not-allowed;
+}
+
+/* ── Buttons ────────────────────────────────────────────── */
+
+.dr-root .dr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--spacing, 0.25rem) * 2);
+  padding: calc(var(--spacing, 0.25rem) * 2.5) calc(var(--spacing, 0.25rem) * 5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg, 0.5rem);
+  font-size: var(--text-body-m, 0.875rem);
+  line-height: var(--text-body-m--line-height, 1.25rem);
+  font-weight: var(--font-weight-medium, 500);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, filter 0.2s;
+}
+
+.dr-root .dr-btn--primary {
+  background: var(--color-accent-bright, #2563eb);
+  color: var(--color-accent-inverted, #ffffff);
+}
+
+/* brightness() statt fester Zweitfarbe: funktioniert in Light und Dark */
+.dr-root .dr-btn--primary:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.dr-root .dr-btn--primary:disabled {
+  background: var(--color-gray-disabled, #94a3b8);
+  color: var(--color-gray-inverted, #ffffff);
+  cursor: not-allowed;
+}
+
+.dr-root .dr-btn--secondary {
+  background: var(--color-foreground-elevated, #ffffff);
+  color: var(--color-gray-primary, #0f172a);
+  border-color: var(--color-gray-divider, #e2e8f0);
+}
+
+.dr-root .dr-btn--secondary:hover {
+  background: var(--color-background-primary, #f1f5f9);
+}
+
+.dr-root .dr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--spacing, 0.25rem) * 2.5);
+}
+
+/* ── Schnelldatum-Buttons ───────────────────────────────── */
+
+.dr-root .dr-quick-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--spacing, 0.25rem) * 1.5);
+}
+
+.dr-root .dr-quick {
+  padding: calc(var(--spacing, 0.25rem) * 1.5) calc(var(--spacing, 0.25rem) * 3);
+  border: none;
+  border-radius: var(--radius-sm, 0.25rem);
+  background: var(--color-background-secondary, #e2e8f0);   /* grau statt weiß */
+  color: var(--color-gray-primary, #0f172a);
+  font-size: var(--text-body-xs, 0.6875rem);
+  line-height: var(--text-body-xs--line-height, 1rem);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.dr-root .dr-quick:hover {
+  background: var(--color-gray-interactive, #cbd5e1);       /* eine Stufe dunkler */
+  color: var(--color-gray-primary, #0f172a);
+}
+
+.dr-root .dr-quick.active {
+  background: var(--color-accent-bright, #2563eb);
+  color: var(--color-accent-inverted, #ffffff);
+  font-weight: var(--font-weight-medium, 500);
+}
+
+/* ── Auswahl-Checkbox mit Beschriftung ──────────────────── */
+
+.dr-root .dr-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing, 0.25rem) * 2);
+  font-size: var(--text-body-s, 0.8125rem);
+  line-height: var(--text-body-s--line-height, 1.125rem);
+  color: var(--color-gray-primary, #0f172a);
+  cursor: pointer;
+}
+
+.dr-root .dr-checkbox-label input[type="checkbox"] {
+  width: calc(var(--spacing, 0.25rem) * 5);
+  height: calc(var(--spacing, 0.25rem) * 5);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* ── Autocomplete ──────────────────────────────────────── */
+
+.dr-root .dr-autocomplete {
+  position: relative;
+}
+
+.dr-root .dr-autocomplete-list {
+  position: absolute;
+  top: calc(100% + calc(var(--spacing, 0.25rem) * 1));
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: none;
+  max-height: calc(var(--spacing, 0.25rem) * 55);   /* 220px */
+  overflow-y: auto;
+  background: var(--color-foreground-elevated, #ffffff);
+  border: 1px solid var(--color-gray-divider, #e2e8f0);
+  border-radius: var(--radius-md, 0.375rem);
+  box-shadow: 0 8px 20px rgb(0 0 0 / 0.12);
+}
+
+.dr-root .dr-autocomplete-list.is-open {
+  display: block;
+}
+
+.dr-root .dr-autocomplete-item {
+  padding: calc(var(--spacing, 0.25rem) * 2.5) calc(var(--spacing, 0.25rem) * 3);
+  font-size: var(--text-body-m, 0.875rem);
+  color: var(--color-gray-primary, #0f172a);
+  cursor: pointer;
+}
+
+.dr-root .dr-autocomplete-item:hover,
+.dr-root .dr-autocomplete-item.active {
+  background: var(--color-accent-b-pale, #dbeafe);
+  color: var(--color-accent-primary, #172554);
+}
+
+.dr-root .dr-autocomplete-empty {
+  padding: calc(var(--spacing, 0.25rem) * 2.5) calc(var(--spacing, 0.25rem) * 3);
+  font-size: var(--text-body-s, 0.8125rem);
+  color: var(--color-gray-secondary, #475569);
+}
+
+/* ── Dienst-Auswahl ───────────────────────────────────── */
+
+.dr-root .dr-service-checkboxes {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(var(--spacing, 0.25rem) * 125);   /* 500px */
+  overflow-y: auto;
+  background: var(--color-foreground-primary, #ffffff);
+  border: 1px solid var(--color-gray-divider, #e2e8f0);
+  border-radius: var(--radius-md, 0.375rem);
+}
+
+/* Leerzustand der Dienste-Box: statt einer gequetschten Zeile
+   ein ruhiger Hinweis-Block, der die Box mit ausfüllt */
+.dr-root .dr-service-checkboxes .dr-empty {
+  padding: calc(var(--spacing, 0.25rem) * 2) calc(var(--spacing, 0.25rem) * 5);
+  min-height: calc(var(--spacing, 0.25rem) * 10); 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--color-gray-secondary, #475569);
+  background: var(--color-background-primary, #f1f5f9);
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
+}
+
+.dr-root .dr-service-group-header {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing, 0.25rem) * 2.5);
+  padding: calc(var(--spacing, 0.25rem) * 3);
+  background: var(--color-accent-b-pale, #dbeafe);
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: calc(var(--spacing, 0.25rem) * 4);   /* 16px – weiße Lücke zwischen den Gruppen */
+}
+
+/* Die erste Gruppe sitzt bündig am oberen Rand der Box */
+.dr-root .dr-service-group-header:first-child {
+  margin-top: 0;
+}
+
+.dr-root .dr-service-group-header:hover {
+  background: color-mix(
+    in srgb,
+    var(--color-accent-b-pale, #dbeafe) 70%,
+    var(--color-accent-interactive, #93c5fd)
+  );
+}
+
+.dr-root .dr-service-group-toggle {
+  flex-shrink: 0;
+  font-size: var(--text-body-xs, 0.6875rem);
+  color: var(--color-accent-primary, #172554);
+  transition: transform 0.2s;
+}
+
+.dr-root .dr-service-group-header.collapsed .dr-service-group-toggle {
+  transform: rotate(-90deg);
+}
+
+.dr-root .dr-group-master-checkbox {
+  width: calc(var(--spacing, 0.25rem) * 5);
+  height: calc(var(--spacing, 0.25rem) * 5);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.dr-root .dr-service-group-header label {
+  font-size: var(--text-body-m, 0.875rem);
+  line-height: var(--text-body-m--line-height, 1.25rem);
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--color-accent-primary, #172554);
+  cursor: pointer;
+}
+
+.dr-root .dr-service-group-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+  padding: calc(var(--spacing, 0.25rem) * 2);
+}
+
+.dr-root .dr-service-group-items.collapsed {
+  display: none;
+}
+
+.dr-root .dr-service-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing, 0.25rem) * 2);
+  padding: calc(var(--spacing, 0.25rem) * 2);
+  border-radius: var(--radius-sm, 0.25rem);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dr-root .dr-service-checkbox-item:hover {
+  background: var(--color-background-primary, #f1f5f9);
+}
+
+.dr-root .dr-service-checkbox-item input[type="checkbox"] {
+  width: calc(var(--spacing, 0.25rem) * 4.5);
+  height: calc(var(--spacing, 0.25rem) * 4.5);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.dr-root .dr-service-checkbox-item label {
+  font-size: var(--text-body-m, 0.875rem);
+  font-weight: var(--font-weight-normal, 400);
+  color: var(--color-gray-primary, #0f172a);
+  cursor: pointer;
+}
+
+/* ── Modal ────────────────────────────────────────────── */
+
+.dr-root .dr-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 0.5);
+}
+
+.dr-root .dr-modal.is-open {
+  display: flex;
+}
+
+.dr-root .dr-modal-content {
+  width: min(90%, calc(var(--spacing, 0.25rem) * 125));   /* max. 500px */
+  max-height: 90%;
+  overflow-y: auto;
+  padding: calc(var(--spacing, 0.25rem) * 6);
+  background: var(--color-foreground-elevated, #ffffff);
+  border-radius: var(--radius-lg, 0.5rem);
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.25);
+}
+
+.dr-root .dr-modal-content h3 {
+  margin-bottom: calc(var(--spacing, 0.25rem) * 5);
+  font-size: var(--text-body-l-emphasized, 1.125rem);
+  line-height: var(--text-body-l-emphasized--line-height, 1.625rem);
+  font-weight: var(--text-body-l-emphasized--font-weight, 700);
+  color: var(--color-gray-primary, #0f172a);
+}
+
+.dr-root .dr-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: calc(var(--spacing, 0.25rem) * 2.5);
+  margin-top: calc(var(--spacing, 0.25rem) * 6);   /* 24px – vorher 0 */
+}

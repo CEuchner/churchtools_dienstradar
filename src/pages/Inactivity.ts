@@ -1,10 +1,6 @@
 // import { routeHref } from '../utils/base';
 
-export default function Inactivity() {
-  return `
-    <div class="card">
-        <h2>Inaktivität</h2>
-        <p>Hier können später Inaktivitäten gefiltert werden.</p>
-    </div>
-  `;
-}
+import { render, init, destroy } from '../features/inactivity';
+
+export default render;
+export { init, destroy };

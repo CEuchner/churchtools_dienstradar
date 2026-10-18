@@ -2,7 +2,11 @@
 import { churchtoolsClient } from '@churchtools/churchtools-client';
 import { renderHeader, renderNav, initNavToggle } from './components/Header';
 import { initRouter } from './router/router';
-import './styles/main.css';
+import './styles/base.css';
+import './styles/layout.css';
+import './styles/form.css';
+import './styles/toast.css';
+import './styles/inactivity.css';
 
 // only import reset.css in development mode to keep the production bundle small and to simulate CT environment
 if (import.meta.env.MODE === 'development') {

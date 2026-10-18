@@ -1,0 +1,106 @@
+/* =========================================================
+   DienstRadar – base.css
+   Grundlagen: Scope-Reset, Typografie-Basis, Animationen,
+   kleine app-weit genutzte Bausteine.
+
+   Alle Werte stammen aus den ChurchTools-Theme-Tokens
+   (--color-*, --text-*, --radius-*, --spacing).
+   Die Fallbacks sind die aufgelösten Tailwind-Farben des
+   Light Mode. Dark Mode wird von ChurchTools über dieselben
+   Tokens gesteuert – eigene .dark-Regeln sind nicht nötig.
+   ========================================================= */
+
+/* Reset nur innerhalb der Extension – der Host bleibt unberührt */
+.dr-root,
+.dr-root * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.dr-root {
+  font-family: var(--font-sans, 'Lato', system-ui, -apple-system, sans-serif);
+  font-size: var(--text-body-m, 0.875rem);
+  line-height: var(--text-body-m--line-height, 1.25rem);
+  font-weight: var(--font-weight-normal, 400);
+  color: var(--color-gray-primary, #0f172a);
+}
+
+.dr-root ul,
+.dr-root ol {
+  list-style: none;
+}
+
+/* Formularelemente erben Schrift und Farbe vom Container */
+.dr-root button,
+.dr-root input,
+.dr-root select,
+.dr-root textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* Fokusring nur bei Tastaturbedienung sichtbar */
+.dr-root :focus-visible,
+.dr-toast-container :focus-visible {
+  outline: 2px solid var(--color-accent-bright, #2563eb);
+  outline-offset: 2px;
+}
+
+/* ── Kleine, app-weit genutzte Bausteine ─────────────────── */
+
+/* Hinweis, wenn eine Liste leer ist */
+.dr-root .dr-empty {
+  padding: calc(var(--spacing, 0.25rem) * 3);
+  color: var(--color-gray-secondary, #475569);
+  font-size: var(--text-body-m, 0.875rem);
+  text-align: center;
+}
+
+/* Zähler-Badge, z. B. "3 Personen" */
+.dr-root .dr-badge {
+  display: inline-block;
+  padding: calc(var(--spacing, 0.25rem) * 1) calc(var(--spacing, 0.25rem) * 3);
+  border-radius: 9999px;
+  background: var(--color-accent-b-pale, #dbeafe);
+  color: var(--color-accent-primary, #172554);
+  font-size: var(--text-body-s, 0.8125rem);
+  line-height: var(--text-body-s--line-height, 1.125rem);
+  font-weight: var(--font-weight-medium, 500);
+  white-space: nowrap;
+}
+
+/* ── Animationen ─────────────────────────────────────────── */
+
+@keyframes radar-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes dr-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dr-toast-in {
+  from { transform: translateX(calc(var(--spacing, 0.25rem) * 5)); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes dr-progress-shrink {
+  from { width: 100%; }
+  to   { width: 0; }
+}
+
+/* Wer Bewegung reduziert haben möchte, bekommt die dekorativen
+   Animationen nicht – funktionale aber schon:
+   Der Fortschrittsbalken (verbleibende Zeit) und der Spinner
+   („läuft etwas") vermitteln Information und bleiben aktiv. */
+@media (prefers-reduced-motion: reduce) {
+  .dr-root h1 svg {
+    animation: none;   /* Radar-Pulsieren: rein dekorativ */
+  }
+
+  .dr-toast {
+    animation: none;   /* Einblenden: dekorativ – Grundzustand ist sichtbar */
+  }
+}

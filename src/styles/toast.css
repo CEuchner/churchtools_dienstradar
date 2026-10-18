@@ -1,0 +1,114 @@
+/* =========================================================
+   DienstRadar – toast.css
+   Benachrichtigungen. Der Container hängt an <body>, also
+   NICHT unter .dr-root – die Selektoren sind daher ungescoped.
+   ========================================================= */
+
+.dr-toast-container {
+  position: fixed;
+  top: calc(var(--spacing, 0.25rem) * 18);   /* 72px – unterhalb der CT-Topbar */
+  right: calc(var(--spacing, 0.25rem) * 5);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing, 0.25rem) * 3);
+  font-family: var(--font-sans, 'Lato', system-ui, sans-serif);
+}
+
+.dr-toast {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--spacing, 0.25rem) * 2.5);
+  min-width: calc(var(--spacing, 0.25rem) * 65);    /* 260px */
+  max-width: calc(var(--spacing, 0.25rem) * 105);   /* 420px */
+  padding: calc(var(--spacing, 0.25rem) * 3) calc(var(--spacing, 0.25rem) * 3.5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg, 0.5rem);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
+  font-size: var(--text-body-m, 0.875rem);
+  line-height: var(--text-body-m--line-height, 1.25rem);
+  animation: dr-toast-in 240ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.dr-toast-content {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing, 0.25rem) * 2);
+  flex: 1 1 auto;
+}
+
+.dr-toast.status-loading {
+  --dr-toast-bar: var(--color-info-bright, #2563eb);
+  --dr-toast-track: var(--color-info-divider, #bfdbfe);
+  background: var(--color-info-b-pale, #dbeafe);
+  color: var(--color-info-primary, #172554);
+  border-color: var(--color-info-divider, #bfdbfe);
+}
+
+.dr-toast.status-success {
+  --dr-toast-bar: var(--color-success-bright, #22c55e);
+  --dr-toast-track: var(--color-success-divider, #bbf7d0);
+  background: var(--color-success-b-pale, #dcfce7);
+  color: var(--color-success-primary, #052e16);
+  border-color: var(--color-success-divider, #bbf7d0);
+}
+
+.dr-toast.status-error {
+  --dr-toast-bar: var(--color-error-bright, #ef4444);
+  --dr-toast-track: var(--color-error-divider, #fecaca);
+  background: var(--color-error-b-pale, #fee2e2);
+  color: var(--color-error-primary, #450a0a);
+  border-color: var(--color-error-divider, #fecaca);
+}
+
+.dr-toast-close {
+  flex-shrink: 0;
+  padding: calc(var(--spacing, 0.25rem) * 1) calc(var(--spacing, 0.25rem) * 1.5);
+  border: none;
+  border-radius: var(--radius-sm, 0.25rem);
+  background: transparent;
+  color: inherit;
+  font-size: var(--text-body-m, 0.875rem);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dr-toast-close:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.dr-toast-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: calc(var(--spacing, 0.25rem) * 1);
+  overflow: hidden;
+  border-bottom-left-radius: var(--radius-lg, 0.5rem);
+  border-bottom-right-radius: var(--radius-lg, 0.5rem);
+  background: var(--dr-toast-track, rgb(0 0 0 / 0.08));
+}
+
+.dr-toast-progress > .bar {
+  width: 100%;
+  height: 100%;
+  transform-origin: left;
+  background: var(--dr-toast-bar, currentColor);
+  animation-name: dr-progress-shrink;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+/* Spinner erbt die Textfarbe des Toasts – dadurch passt er zu allen Typen */
+.dr-spinner {
+  display: inline-block;
+  flex-shrink: 0;
+  width: calc(var(--spacing, 0.25rem) * 4);    /* 16px */
+  height: calc(var(--spacing, 0.25rem) * 4);
+  border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: dr-spin 1s linear infinite;
+}

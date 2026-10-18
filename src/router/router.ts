@@ -79,10 +79,10 @@ export async function renderRoute() {
 
   if (!route) {
     contentContainer.innerHTML = `
-      <div class="dr-card">
+      <div class="card">
         <h2>Seite nicht gefunden</h2>
         <p>Route "${hash}" ist nicht definiert.</p>
-        <a href="#/" class="dr-link" style="display:inline-block;margin-top:0.5rem">← Dashboard</a>
+        <a href="#/" class="link" style="background">← Dashboard</a>
       </div>
     `;
     return;
@@ -110,7 +110,7 @@ export async function renderRoute() {
     activeModule = null;
     console.error('💥 Fehler beim Laden der Seite:', err);
     contentContainer.innerHTML = `
-      <div class="dr-card" style="color:#dc2626;border:1px solid #fecaca">
+      <div class="card" style="color:#dc2626;border:1px solid #fecaca">
         <h2>Fehler beim Laden</h2>
         <pre style="background:#f8fafc;padding:0.5rem;border-radius:4px;margin-top:0.5rem">${String(err)}</pre>
       </div>
