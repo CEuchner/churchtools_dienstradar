@@ -128,23 +128,28 @@ export function render(): string {
 }
 
 let cleanupListeners: (() => void) | null = null;
+let instanceId = 0;
 
-/**
- * Wird vom Router nach dem Einsetzen des Markups aufgerufen.
- */
 export async function init(): Promise<void> {
+    const id = ++instanceId;
     const elements = getElements();
 
-    // State und Rechte-Index leeren, damit ein erneuter Besuch frisch startet
+    // IDEMPOTENZ: Läuft init erneut (doppeltes Rendern, schneller Wechsel),
+    // zuerst die vorherige Instanz aufräumen – sonst stapeln sich Listener
+    // und die alte Aufräumfunktion geht verloren.
+    cleanupListeners?.();
+    cleanupListeners = null;
+
     resetState();
     resetServiceGroupIndex();
 
-    // Listener zuerst: So funktioniert die Seite auch, wenn das Laden scheitert
-    // (dann erscheint die Fehlermeldung als Toast statt eines toten Formulars).
     cleanupListeners = initInactivityListeners(elements);
 
     try {
         await loadInactivityData();
+
+        // Während des Ladens verlassen/erneuert? Dann ist dieser Durchlauf veraltet.
+        if (id !== instanceId) return;
 
         populateServiceCheckboxes(elements);
         setDefaultDates(elements);
@@ -152,6 +157,8 @@ export async function init(): Promise<void> {
         elements.groupSearch.disabled = false;
         elements.searchBtn.disabled = false;
     } catch (error) {
+        if (id !== instanceId) return;
+
         showStatus(
             'Fehler beim Laden der Daten: ' +
                 (error instanceof Error ? error.message : 'Unbekannter Fehler'),
@@ -160,10 +167,8 @@ export async function init(): Promise<void> {
     }
 }
 
-/**
- * Wird vom Router vor dem Austausch des Markups aufgerufen.
- */
 export function destroy(): void {
+    instanceId++;
     cleanupListeners?.();
     cleanupListeners = null;
 
