@@ -112,3 +112,10 @@
   border-radius: 50%;
   animation: dr-spin 1s linear infinite;
 }
+
+/* Toast beim Entfernen: Höhe kollabiert, Rest schiebt sanft nach oben */
+.dr-toast.dr-toast--leaving {
+  overflow: hidden;
+  min-width: 0;
+  animation: dr-toast-out 250ms ease-in forwards;
+}

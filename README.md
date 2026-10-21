@@ -2,17 +2,19 @@
 
 ChurchTools-Extension zum Finden von Personen in einer Gruppe, die in einem bestimmten Zeitraum in bestimmten Diensten nicht aktiv waren – und zum Hinzufügen dieser Personen zu einer Follow-up-Gruppe.
 
-DienstRadar ist eine Single-Page-Extension mit Hash-Router. Die Inaktivitäts-Suche ist der erste Funktionsbereich; die Struktur ist auf weitere Seiten (Dashboard, Statistiken, Einstellungen) vorbereitet. **Version: 1.0.0**
+DienstRadar ist eine Single-Page-Extension mit Hash-Router. Die Inaktivitäts-Suche ist der erste Funktionsbereich; die Struktur ist auf weitere Seiten (Dashboard, Statistiken, Einstellungen) vorbereitet. **Version: 1.0.1**
 
 ## Features
 
-- **Gruppen-Autocomplete** – Texteingabe mit Echtzeit-Filterung und Tastaturnavigation (Pfeiltasten, Enter, Escape), auch im Zielgruppen-Modal
+- **Inaktivitäts-Suche** – findet Mitglieder einer Gruppe, die im gewählten Zeitraum keinen der ausgewählten Dienste wahrgenommen haben
+- **Gruppen-Autocomplete** – Texteingabe mit Echtzeit-Filterung und Tastaturnavigation (Pfeiltasten, Enter, Escape); Auswahl per Tastatur **und** Maus schließt die Vorschlagsliste, die beim Öffnen von rechts einslidet
 - **Rechtebasierte Dienst-Auswahl** – nur Dienste sichtbar, für die der Nutzer berechtigt ist (auf Ebene der Dienstgruppen ausgewertet)
 - **Zeitraum-Filter** – Schnellbuttons (-12M bis +12M bzw. Heute) oder freie Datumswahl, Standard: -6M bis +12M
-- **Smarte Suche** – findet Mitglieder, die im Zeitraum **keinen** der gewählten Dienste wahrgenommen haben
 - **Sammel-Aktion** – mehrere gefundene Personen gleichzeitig in eine Zielgruppe hinzufügen (per Modal mit Autocomplete)
-- **Toast-Benachrichtigungen** – Loading persistent mit Spinner, Erfolg nach 5 s, Fehler nach 10 s, jeweils mit Fortschrittsbalken; Fehler zusätzlich mit Schließen-Button
-- **Responsive** – Sidebar wird auf Mobil zum Burger-gesteuerten Drawer
+- **Toast-Benachrichtigungen** – Loading persistent mit Spinner, Erfolg nach 5 s, Fehler nach 10 s, jeweils mit Fortschrittsbalken in passender Farbe; Toasts kollabieren beim Schließen animiert, sodass die darunterliegenden sanft nachrutschen
+- **Tab-Titel** – zeigt Seite und Gemeinde-Namen (z. B. „Inaktivität · DienstRadar · Chris - Testsystem")
+- **Content-Breiten** – Seiten wählen ihre Arbeitsbreite (`dr-content-narrow` = 800px zentriert, oder volle Breite)
+- **Responsive** – Sidebar wird unter 1200px zum Burger-gesteuerten Drawer; Nav slidet beim Übergang zum Desktop-Layout ein
 - **Dark Mode** – automatisch über die ChurchTools-Theme-Tokens
 - **E-Mail-Anzeige** – gefundene Personen mit klickbarem `mailto:`-Link
 
@@ -25,7 +27,8 @@ src/
 │   ├── permissions.ts            # Rechte laden (global + gruppenintern)
 │   ├── groups.ts                 # Gruppen, Mitglieder, addPersonsToGroup
 │   ├── services.ts               # Dienste, Dienstgruppen
-│   └── events.ts                 # Termine im Zeitraum (eventServices)
+│   ├── events.ts                 # Termine im Zeitraum (eventServices)
+│   └── info.ts                   # Instanz-Info (siteName) für den Tab-Titel
 ├── components/                   # Geteilte UI-Bausteine (seitenunabhängig)
 │   ├── Header.ts                 # Titelzeile, Navigation, Burger-Toggle
 │   ├── icons.ts                  # Zentrale SVG-Sammlung
@@ -45,7 +48,7 @@ src/
 ├── router/router.ts              # Hash-Router mit Seiten-Lebenszyklus
 ├── styles/                       # CSS auf CT-Tokens, nach Bausteinen getrennt
 │   ├── base.css                  # Reset, Badge/Empty-State, Keyframes
-│   ├── layout.css                # Root, Header, Nav, Content, Cards
+│   ├── layout.css                # Root, Header, Nav, Content, Cards, Breiten
 │   ├── form.css                  # Felder, Buttons, Autocomplete, Modal
 │   ├── toast.css                 # Toasts (Root-Level, außerhalb .dr-root)
 │   └── inactivity.css            # Seitenspezifisches Layout
@@ -64,12 +67,14 @@ src/
 Der Router erwartet pro Seite drei optionale Exporte:
 
 ```ts
+export const title: string;             // Tab-Titel (optional)
 export default render;                  // HTML-String für .content
 export function init(): Promise<void>;  // nach dem Einsetzen ins DOM
 export function destroy(): void;        // vor dem Austausch des Markups
 ```
 
 - `init()` ist der einzige Zeitpunkt, an dem DOM-Referenzen aufgelöst werden (`getElements()` in `state.ts` ist bewusst eine Funktion, kein eingefrorenes Objekt) – so zeigen Referenzen nach einem Seitenwechsel nie auf abgehängte Knoten.
+- `init()` ist **idempotent**: Ein erneuter Aufruf räumt zuerst die vorherige Instanz auf (Listener, State), bevor sie neu aufbaut. Ein `instanceId`-Zähler verhindert zudem, dass ein während des Datenladens veralteter Durchlauf noch Elemente oder State verändert.
 - `destroy()` räumt alle Listener ab, inklusive der `document`-Handler des Autocomplete. Ohne das würden sich Listener bei jedem Seitenbesuch stapeln.
 - Ein Token-Guard im Router verwirft veraltete Rendering-Durchläufe bei schnellem Routenwechsel.
 
@@ -80,6 +85,11 @@ Wiederverwendbare Zugriffe liegen in `src/api/`, geteilte UI-Bausteine in `src/c
 ### CSS
 
 Alle Werte stammen aus den ChurchTools-Theme-Tokens (`--color-*`, `--text-*`, `--radius-*`, `--spacing`) mit aufgelösten Tailwind-Fallbacks für den Standalone-Betrieb. Eigene Dark-Mode-Regeln sind nicht nötig – die Tokens schalten selbst um. Die Toasts werden am `<body>` gerendert und sind daher die einzige Ausnahme ohne `.dr-root`-Scope.
+
+**Breakpoints** sind bewusst entkoppelt und an beiden Stellen kommentiert:
+
+- `48rem` (768px) – Formular-Layout: zweispaltig → gestapelt (`inactivity.css`)
+- `75rem` (1200px) – Sidebar: Spalte → Burger-Drawer (`layout.css`)
 
 ## Rechte-Modell
 
@@ -98,6 +108,7 @@ Dienste ohne `serviceGroupId` gelten als ungültiger Datenzustand und werden aus
 
 ## API-Endpunkte
 
+- `GET /info` – Instanz-Name (`siteName`) für den Tab-Titel
 - `GET /groups?only_my_groups=true` – eigene Gruppen für Rechteprüfungen
 - `GET /permissions/global` – `view servicegroup`, `edit servicegroup`
 - `GET /permissions/internal/groups` – gruppeninterne Rechte (`+entry all`)
@@ -143,7 +154,7 @@ npx tsc --noEmit
 
 ## Nutzung
 
-1. Gruppe über das Suchfeld wählen (Autocomplete)
+1. Gruppe über das Suchfeld wählen (Autocomplete – per Maus oder Tastatur)
 2. Dienste auswählen – aufklappbare Dienstgruppen mit Master-Checkbox (alle/keine/teilausgewählt)
 3. Zeitraum per Schnellbuttons oder Datumsfelder setzen (Standard: -6M bis +12M)
 4. „Inaktive finden" – Ergebnisliste mit Name, E-Mail und Auswahl-Checkbox
@@ -164,6 +175,7 @@ npx tsc --noEmit
 
 ## Changelog
 
+- **v1.0.1** – UI-Feinschliff und Bugfixes: Content-Breiten als wiederverwendbare Utilities (800px zentriert für die Inaktivitäts-Seite), Hintergrund/Karten-Farben vereinheitlicht, Tiefen-Effekte für Inputs und Quick-Buttons, Vorschlagsliste slidet beim Öffnen ein, Maus-Auswahl im Autocomplete schließt die Liste (Fix), Sidebar-Drawer ab 1200px mit Nav-Slide, Toasts kollabieren animiert beim Schließen, Tab-Titel mit Gemeinde-Namen, `init()` idempotent gemacht (Fix gegen doppelte Listener)
 - **v1.0.0** – Erste Version: Inaktivitäts-Suche (Gruppen-Autocomplete, rechtebasierte Dienst-Auswahl, Zeitraum-Filter, Sammel-Zuweisung über Modal), Router mit Seiten-Lebenszyklus, CSS auf ChurchTools-Theme-Tokens, Toast-Benachrichtigungen
 
 ## Support & Ressourcen

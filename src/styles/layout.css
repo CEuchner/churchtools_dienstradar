@@ -4,6 +4,14 @@
    --radius-*, --spacing), Fallbacks = aufgelöste CT-Werte (Tailwind)
    ========================================================= */
 
+/* =========================================================
+   BREAKPOINTS (Übersicht):
+   - 48rem (768px)  – Formular-Layout: zweispaltig → gestapelt   [inactivity.css]
+   - 75rem (1200px) – Sidebar: Spalte → Burger-Drawer            [layout.css]
+   Absichtlich entkoppelt – nicht ohne Prüfung der anderen Stelle ändern.
+   ========================================================= */
+
+   
 /* Root: volle Höhe, damit Sidebar/Content bis unten laufen */
 .dr-root {
   display: flex;
@@ -41,7 +49,7 @@
   min-height: 0;
   font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
   color: var(--color-gray-primary, #0f172a);
-  background: var(--color-background-secondary, #e2e8f0);
+  background: var(--color-background-primary, #f1f5f9);
 }
 
 /* Header (nur Titelzeile) */
@@ -136,9 +144,9 @@
 
 /* Content-Bereich */
 .dr-root .content {
-  padding: calc(var(--spacing, 0.25rem) * 6);  /* 1.5rem */
+  padding: calc(var(--spacing, 0.25rem) * 6);
   overflow-y: auto;
-  background: var(--color-background-secondary, #e2e8f0);
+  background: var(--color-background-primary, #f1f5f9);
 }
 
 /* Karten-Style für Seiten – CT: radius-lg = 8px */
@@ -166,11 +174,13 @@
   margin-bottom: calc(var(--spacing, 0.25rem) * 2);
 }
 
-/* Tablet/Mobile (CT: breakpoint-md = 48rem = 768px):
-   Sidebar wird zum Burger-gesteuerten Drawer */
-@media (max-width: 48rem) {
+/* Unter 1200px (CT: breakpoint-xl): Sidebar wird zum Burger-gesteuerten Drawer */
+/* Hinweis: Der Sidebar-Breakpoint (75rem) ist bewusst ENTKOPPELT vom
+   Formular-Breakpoint (48rem, siehe inactivity.css). Das Formular bleibt
+   zwischen 768px und 1200px zweispaltig – dort ist genug Platz. */
+@media (max-width: 75rem) {
   .dr-root .nav-toggle {
-    display: flex;   /* Burger einblenden */
+    display: flex;
   }
 
   .dr-root .header .container {
@@ -180,10 +190,9 @@
   }
 
   .dr-root .body {
-    grid-template-columns: 1fr;   /* nur noch eine Spalte */
+    grid-template-columns: 1fr;
   }
 
-  /* Nav wird zum fixen Panel links, standardmäßig rausgeschoben */
   .dr-root .nav {
     position: fixed;
     top: var(--dr-top, 0px);
@@ -193,13 +202,38 @@
     z-index: 50;
     transform: translateX(-100%);
     transition: transform 0.25s ease;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0 20px rgb(0 0 0 / 0.15);
     border-right: 1px solid var(--color-gray-divider, #e2e8f0);
     padding-top: calc(var(--spacing, 0.25rem) * 6);
   }
 
   .dr-root .nav.open {
-    transform: translateX(0);   /* ← der Toggle-Zustand */
+    transform: translateX(0);
   }
 }
 
+/* Nav slidet ein, wenn der Viewport den Desktop-Breakpoint überschreitet */
+@media (min-width: 75rem) {
+  .dr-root .nav {
+    animation: dr-slide-nav-in 180ms ease-out;
+  }
+}
+
+/* ── Content-Breiten ──────────────────────────────────────────────
+   Seiten wählen ihre Arbeitsbreite über diese Utility-Klassen.
+   Der Wrapper sitzt innerhalb von .content und zentriert den Inhalt. */
+
+/* Default: volle Breite (kein Wrapper nötig, aber für Einheitlichkeit vorhanden) */
+.dr-root .dr-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing, 0.25rem) * 6);
+}
+
+/* Schmale Arbeitsbreite für Formular-/Listen-Seiten:
+   Inhalt zentriert, damit er optisch in der Content-Spalte bleibt */
+.dr-root .dr-content-narrow {
+  max-width: 50rem;   /* 800px */
+  margin-inline: auto;
+}

@@ -148,7 +148,7 @@ export function createAutocomplete(options: AutocompleteOptions): AutocompleteIn
         if (!item?.dataset.id) return;
 
         onSelect(item.dataset.id, item.textContent ?? '');
-        resetActive();
+        close(); 
     }
 
     function handleDocumentClick(event: MouseEvent): void {

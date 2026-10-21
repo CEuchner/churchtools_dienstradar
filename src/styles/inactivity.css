@@ -22,6 +22,10 @@
   gap: calc(var(--spacing, 0.25rem) * 5);
 }
 
+/* Hinweis: Der Sidebar-Breakpoint (75rem) ist bewusst ENTKOPPELT vom
+   Formular-Breakpoint (48rem, siehe inactivity.css). Das Formular bleibt
+   zwischen 768px und 1200px zweispaltig – dort ist genug Platz. */
+   
 @media (max-width: 48rem) {
   .dr-root .dr-inactivity-form {
     grid-template-columns: 1fr;
@@ -95,7 +99,7 @@
 }
 
 .dr-root .dr-inactivity-person-card:hover {
-  background: var(--color-background-primary, #f1f5f9);
+  background: var(--color-gray-50, #f8fafc);
 }
 
 .dr-root .dr-inactivity-person-info h3 {
@@ -132,7 +136,7 @@
 
 /* Karte für die drei Formularblöcke (wie in Karteileichen) */
 .dr-root .dr-inactivity-panel {
-  background: var(--color-foreground-secondary, #f8fafc);  /* zartes Grau statt Weiß */
+  background: var(--color-foreground-elevated, #ffffff);
   border: 1px solid var(--color-gray-divider, #e2e8f0);
   border-radius: var(--radius-lg, 0.5rem);
   padding: calc(var(--spacing, 0.25rem) * 5);
