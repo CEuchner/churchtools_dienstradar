@@ -99,14 +99,26 @@
   cursor: not-allowed;
 }
 
+/* Secondary-Button: Ghost-Stil – transparent mit Accent-Umriss.
+   Text/Umriss in accent-bright (Light: blue-600 – kräftig genug;
+   Dark: Tokens liefern die hellere Stufe). accent-interactive
+   (blue-300) wäre im Light Mode zu blass zum Lesen – es ist erst
+   im Hover als Border-Verstärkung sinnvoll. */
+/* Secondary-Button im CT-Stil: reine Flächen-Hierarchie statt Akzentfarbe.
+   Light: weiß (wie die Karte), abgehoben über Rand + Schatten.
+   Dark: foreground-primary = zinc-800 = eine Stufe DUNKLER als die
+   Karte (foreground-elevated, zinc-700) – genau CTs Dark-Verhalten.
+   Hover: eine Stufe dunkler, in beiden Modi über background-primary. */
 .dr-root .dr-btn--secondary {
-  background: var(--color-foreground-elevated, #ffffff);
+  background: var(--color-foreground-primary, #ffffff);
   color: var(--color-gray-primary, #0f172a);
   border-color: var(--color-gray-divider, #e2e8f0);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
 }
 
 .dr-root .dr-btn--secondary:hover {
   background: var(--color-background-primary, #f1f5f9);
+  border-color: var(--color-gray-interactive, #cbd5e1);
 }
 
 .dr-root .dr-actions {
@@ -123,30 +135,37 @@
   gap: calc(var(--spacing, 0.25rem) * 1.5);
 }
 
+/* Quick-Buttons im CT-Stil – identisches Format wie dr-btn--secondary:
+   weiße Fläche (Dark: eine Stufe dunkler als die Karte), abgehoben
+   über Rand + Schatten, Hover eine Stufe dunkler. Bewusst KEIN inset
+   mehr – Tiefen-Konzept der Buttons ist jetzt einheitlich "erhaben". */
 .dr-root .dr-quick {
   padding: calc(var(--spacing, 0.25rem) * 1.5) calc(var(--spacing, 0.25rem) * 3);
-  border: none;
+  border: 1px solid var(--color-gray-divider, #e2e8f0);
   border-radius: var(--radius-sm, 0.25rem);
-  background: var(--color-background-secondary, #e2e8f0);   /* grau statt weiß */
-  color: var(--color-gray-primary, #0f172a);
+  background: var(--color-foreground-primary, #ffffff);
+  color: var(--color-gray-secondary, #475569);
   font-size: var(--text-body-xs, 0.6875rem);
   line-height: var(--text-body-xs--line-height, 1rem);
   cursor: pointer;
-  box-shadow: 0 2px 3px rgb(0 0 0 / 0.08), 0 1px 1px rgb(0 0 0 / 0.05);
-  transition: background 0.2s, color 0.2s;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
 .dr-root .dr-quick:hover {
-  background: var(--color-gray-interactive, #cbd5e1);       /* eine Stufe dunkler */
+  background: var(--color-background-primary, #f1f5f9);
+  border-color: var(--color-gray-interactive, #cbd5e1);
   color: var(--color-gray-primary, #0f172a);
 }
 
+/* Ausgewählt: die einzige kräftige Fläche – hebt sich bewusst vom
+   CT-Grundformat ab, genau wie der Primary unter den Secondary-Buttons */
 .dr-root .dr-quick.active {
   background: var(--color-accent-bright, #2563eb);
   border-color: var(--color-accent-bright, #2563eb);
   color: var(--color-accent-inverted, #ffffff);
   font-weight: var(--font-weight-medium, 500);
-  box-shadow: none;   
+  box-shadow: none;
 }
 
 /* ── Auswahl-Checkbox mit Beschriftung ──────────────────── */
