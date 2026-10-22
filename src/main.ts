@@ -9,6 +9,7 @@ import './styles/layout.css';
 import './styles/form.css';
 import './styles/toast.css';
 import './styles/inactivity.css';
+import './styles/dashboard.css'; 
 
 // only import reset.css in development mode to keep the production bundle small and to simulate CT environment
 if (import.meta.env.MODE === 'development') {

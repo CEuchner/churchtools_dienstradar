@@ -8,6 +8,9 @@
  *  - error   : verschwindet nach 10 s automatisch (doppelt so lange wie
  *              success, damit sie lesbar bleiben), ebenfalls mit
  *              Fortschrittsbalken. Der ✕-Button erlaubt früheres Schließen.
+ *  - action  : Meldung mit Aktions-Button (z. B. „Zugesagt" + „Rückgängig"),
+ *              bleibt UNDO_TIMEOUT_MS stehen; Klick auf den Button bricht
+ *              den Timer ab und führt die Aktion aus.
  *
  * Beim Entfernen kollabiert ein Toast animiert (Höhe + Deckkraft), sodass
  * die darunterliegenden Toasts sanft nach oben rutschen.
@@ -28,6 +31,9 @@ const SUCCESS_TIMEOUT_MS = 5000;
 
 /** Fehler stehen doppelt so lange, damit sie lesbar bleiben. */
 const ERROR_TIMEOUT_MS = SUCCESS_TIMEOUT_MS * 2;
+
+/** Undo-Meldungen bleiben sichtbar, bis der Nutzer entschieden hat. */
+const UNDO_TIMEOUT_MS = 15000;
 
 /** Muss zur Animation `dr-toast-out` in toast.css passen. */
 const REMOVE_ANIMATION_MS = 250;
@@ -104,8 +110,10 @@ export function showStatus(message: string, type: StatusType): void {
         return;
     }
 
-    // Ab hier keine Loading-Toasts mehr stehen lassen
-    container.querySelectorAll(`.${TOAST_CLASS}.status-loading`).forEach(el => el.remove());
+    // Ab hier keine Loading-Toasts mehr stehen lassen –
+    // animiert, damit Nachfolger sanft nachrutschen statt zu springen
+    container.querySelectorAll<HTMLElement>(`.${TOAST_CLASS}.status-loading`)
+        .forEach(removeToast);
 
     const toast = document.createElement('div');
     toast.className = `${TOAST_CLASS} status-${type}`;
@@ -138,6 +146,56 @@ export function showStatus(message: string, type: StatusType): void {
 
     // Ist der Toast schon weg, ist remove() ein No-op – kein Extra-Aufräumen nötig.
     setTimeout(() => removeToast(toast), timeoutMs);
+
+    container.appendChild(toast);
+}
+
+/**
+ * Zeigt eine Meldung mit Aktions-Button (z. B. „Zugesagt" + „Rückgängig").
+ * Bleibt UNDO_TIMEOUT_MS stehen; der Klick auf den Button bricht den Timer
+ * ab, entfernt den Toast sofort und führt die Aktion aus.
+ */
+export function showActionToast(
+    message: string,
+    actionLabel: string,
+    onAction: () => void | Promise<void>
+): void {
+    const container = getContainer();
+
+    // Aktions-Toast ersetzt laufende Loading-Toasts (gleiche Logik wie success/error)
+    container.querySelectorAll<HTMLElement>(`.${TOAST_CLASS}.status-loading`)
+        .forEach(removeToast);
+
+    const toast = document.createElement('div');
+    toast.className = `${TOAST_CLASS} status-action`;
+    toast.appendChild(buildContent(message, false));
+
+    const actionBtn = document.createElement('button');
+    actionBtn.type = 'button';
+    actionBtn.className = 'dr-toast-action';
+    actionBtn.textContent = actionLabel;
+
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+
+    actionBtn.addEventListener('click', async () => {
+        if (timeout !== undefined) clearTimeout(timeout);
+        toast.remove();                    // sofort weg – die Aktion übernimmt die Anzeige
+        await onAction();
+    });
+
+    toast.appendChild(actionBtn);
+
+    const progress = document.createElement('div');
+    progress.className = 'dr-toast-progress';
+
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.style.animationDuration = `${UNDO_TIMEOUT_MS}ms`;
+
+    progress.appendChild(bar);
+    toast.appendChild(progress);
+
+    timeout = setTimeout(() => removeToast(toast), UNDO_TIMEOUT_MS);
 
     container.appendChild(toast);
 }

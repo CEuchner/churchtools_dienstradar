@@ -1,0 +1,331 @@
+/* =========================================================
+   DienstRadar – dashboard.css
+   Dashboard: Hero + dreispaltiges Grid (1fr 1fr 2fr).
+
+   Responsive:
+   - < 75rem: Spalte 3 rutscht unter Spalten 1+2 (volle Breite)
+   - < 48rem: alles gestapelt
+   - Container-Queries auf den Karten steuern die Button-Varianten
+     (abhängig von der KARTENbreite, nicht vom Fenster)
+   ========================================================= */
+
+/* ── Wrapper: volle Breite, vertikaler Rhythmus über gap ─── */
+
+.dr-root .dr-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing, 0.25rem) * 4);
+}
+
+/* ── Hero ────────────────────────────────────────────────── */
+
+/* Dezent als „aktuelles Ereignis" markiert – Akzentstreifen links.
+   Falls nicht gewollt: diese eine Zeile löschen. */
+.dr-root .dr-dashboard-hero {
+  border-left: 4px solid var(--color-accent-bright, #2563eb);
+}
+
+.dr-root .dr-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: calc(var(--spacing, 0.25rem) * 5);
+}
+
+/* Datum-Block: große Tageszahl, Monat darunter */
+.dr-root .dr-hero-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: calc(var(--spacing, 0.25rem) * 18);   /* 72px */
+}
+
+.dr-root .dr-hero-date-day {
+  font-size: 2.75rem;
+  line-height: 1;
+  font-weight: var(--text-display-m--font-weight, 700);
+  color: var(--color-gray-primary, #0f172a);
+}
+
+.dr-root .dr-hero-date-month {
+  font-size: var(--text-body-s, 0.8125rem);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-gray-secondary, #475569);
+}
+
+/* Titel + Countdown + lange Datumszeile + Dienst-Pills */
+.dr-root .dr-hero-main {
+  flex: 1 1 12rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing, 0.25rem) * 1.5);
+}
+
+.dr-root .dr-hero-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--spacing, 0.25rem) * 3);
+}
+
+.dr-root .dr-dashboard-hero-title {
+  margin: 0;
+  font-size: var(--text-display-m, 1.75rem);
+  line-height: var(--text-display-m--line-height, 2.25rem);
+  font-weight: var(--text-display-m--font-weight, 700);
+  color: var(--color-gray-primary, #0f172a);
+}
+
+.dr-root .dr-dashboard-hero-countdown {
+  display: inline-block;
+  padding: calc(var(--spacing, 0.25rem) * 0.5) calc(var(--spacing, 0.25rem) * 2);
+  border-radius: 9999px;
+  background: var(--color-accent-b-pale, #dbeafe);
+  color: var(--color-accent-primary, #172554);
+  font-size: var(--text-body-s, 0.8125rem);
+  font-weight: var(--font-weight-medium, 500);
+  white-space: nowrap;
+}
+
+.dr-root .dr-hero-date-long {
+  margin: 0;
+  font-size: var(--text-body-m, 0.875rem);
+  color: var(--color-gray-secondary, #475569);
+}
+
+/* Zugesagte Dienste als Pills */
+.dr-root .dr-hero-services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--spacing, 0.25rem) * 1.5);
+}
+
+.dr-root .dr-hero-pill {
+  display: inline-block;
+  padding: calc(var(--spacing, 0.25rem) * 0.75) calc(var(--spacing, 0.25rem) * 2.5);
+  border-radius: 9999px;
+  background: var(--color-background-secondary, #e2e8f0);
+  color: var(--color-gray-primary, #0f172a);
+  font-size: var(--text-body-s, 0.8125rem);
+  font-weight: var(--font-weight-medium, 500);
+  white-space: nowrap;
+}
+
+/* Hero-Button rechts, vertikal zentriert; rutscht bei knappem Platz um */
+.dr-root .dr-hero-btn {
+  margin-left: auto;
+  margin-top: calc(var(--spacing, 0.25rem) * 1); 
+}
+
+/* ── Grid: 1fr 1fr 2fr ───────────────────────────────────── */
+
+.dr-root .dr-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr;
+  grid-template-areas: "col1 col2 col3";
+  gap: calc(var(--spacing, 0.25rem) * 4);
+  align-items: start;
+}
+
+.dr-root .dr-dashboard-col--1 { grid-area: col1; }
+.dr-root .dr-dashboard-col--2 { grid-area: col2; }
+.dr-root .dr-dashboard-col--3 { grid-area: col3; }
+
+.dr-root .dr-dashboard-col {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing, 0.25rem) * 4);
+  min-width: 0;
+}
+
+.dr-root .dr-dashboard-card {
+  margin-bottom: 0;
+  /* Container-Query-Anker: die Button-Varianten der Einträge
+     richten sich nach der Breite dieser Karte */
+  container-type: inline-size;
+}
+
+/* ── Listen (Anstehende Dienste + Anfragen) ──────────────── */
+
+.dr-root .dr-dashboard-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.dr-root .dr-dashboard-entry {
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--spacing, 0.25rem) * 3) 0;
+  border-bottom: 1px solid var(--color-gray-divider, #e2e8f0);
+}
+
+.dr-root .dr-dashboard-entry:last-child {
+  border-bottom: none;
+}
+
+/* Kopfzeile: Der Button floatet rechts, Datum + Titel fließen als
+   normaler Text um ihn herum. flow-root hält den Float innerhalb
+   der Kopfzeile, damit er nicht in die Diensteliste ragt. */
+.dr-root .dr-dashboard-entry-head {
+  display: flow-root;
+}
+
+.dr-root .dr-dashboard-entry-date {
+  flex: 0 0 auto;
+  font-size: var(--text-body-s, 0.8125rem);
+  color: var(--color-gray-secondary, #475569);
+  white-space: nowrap;
+}
+
+/* flex-basis = max-content: kurzer Titel bleibt neben dem Datum,
+   langer Titel weicht komplett in die nächste Zeile */
+.dr-root .dr-dashboard-entry-event {
+  font-size: var(--text-body-m, 0.875rem);
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--color-gray-primary, #0f172a);
+}
+
+/* Zugesagte Dienste unter der Kopfzeile – bewusst kleiner und heller
+   als der Eventname, damit Titel und Dienste klar unterscheidbar sind */
+.dr-root .dr-dashboard-entry-services {
+  margin-top: calc(var(--spacing, 0.25rem) * 1);
+  margin-left: calc(var(--spacing, 0.25rem) * 3);   /* leicht eingerückt */
+  padding-left: calc(var(--spacing, 0.25rem) * 2);
+  border-left: 2px solid var(--color-gray-divider, #e2e8f0);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing, 0.25rem) * 0.5);
+  font-size: var(--text-body-s, 0.8125rem);
+  color: var(--color-gray-secondary, #475569);
+}
+
+/* Button schwebt rechts; der Text der Kopfzeile umfließt ihn.
+   Zeilen UNTER der Button-Unterkante laufen bis an den rechten Rand. */
+.dr-root .dr-entry-btn {
+  float: right;
+  margin-left: calc(var(--spacing, 0.25rem) * 2);
+  margin-bottom: calc(var(--spacing, 0.25rem) * 1);
+  padding: calc(var(--spacing, 0.25rem) * 1) calc(var(--spacing, 0.25rem) * 2.5);
+  font-size: var(--text-body-s, 0.8125rem);
+  white-space: nowrap;
+}
+
+.dr-root .dr-entry-btn--bottom {
+  display: inline-flex;
+  align-self: flex-end;
+  margin-top: calc(var(--spacing, 0.25rem) * 2);
+}
+
+/* Ab genügend Kartenbreite: oberer Button an, unterer aus.
+   Stellschraube: der 22rem-Wert (~352px Kartenbreite). */
+@container (min-width: 22rem) {
+  .dr-root .dr-entry-btn--top {
+    display: inline-flex;
+  }
+
+  .dr-root .dr-entry-btn--bottom {
+    display: none;
+  }
+}
+
+/* Anfragen-Karte nutzt die einfache Variante (Datum + Textzeile) */
+.dr-root .dr-dashboard-entry-main {
+  font-size: var(--text-body-m, 0.875rem);
+  color: var(--color-gray-primary, #0f172a);
+}
+
+.dr-root .dr-dashboard-entry-main a {
+  color: var(--color-accent-bright, #2563eb);
+  text-decoration: underline;
+}
+
+.dr-root .dr-empty {
+  color: var(--color-gray-secondary, #475569);
+  margin: 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+
+/* Unter 1200px (Sidebar-Breakpoint): Spalte 3 unter 1+2 */
+@media (max-width: 75rem) {
+  .dr-root .dr-dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "col1 col2"
+      "col3 col3";
+  }
+}
+
+/* Unter 768px (Formular-Breakpoint): alles gestapelt */
+@media (max-width: 48rem) {
+  .dr-root .dr-dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "col1"
+      "col2"
+      "col3";
+  }
+}
+
+/* ── Offene Dienste: Quick-Buttons (nutzt .dr-quick aus form.css) ── */
+
+.dr-root .dr-dashboard-card .dr-quick-buttons {
+  margin-bottom: calc(var(--spacing, 0.25rem) * 3);
+}
+
+/* ── Offene Dienste: markante Darstellung (Warning-Familie) ──
+   Offene Dienste sind handlungsrelevant – gelber Akzent analog
+   zum blauen Hero-Akzentstreifen. Tokens schalten im Dark Mode um. */
+
+/* Die offenen Dienste selbst als gelbe Pills – das ist der
+   eigentliche Marker: „diese Lücken wollen gefüllt werden" */
+.dr-root .dr-open-services {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: calc(var(--spacing, 0.25rem) * 1.5);
+  border-left: none;            /* Pills tragen die Farbe, kein Einrückungsstrich nötig */
+  margin-left: calc(var(--spacing, 0.25rem) * 3);
+  padding-left: 0;
+}
+
+.dr-root .dr-open-pill {
+  display: inline-block;
+  padding: calc(var(--spacing, 0.25rem) * 0.75) calc(var(--spacing, 0.25rem) * 2.5);
+  border-radius: 9999px;
+  background: var(--color-warning-b-pale, #fef9c3);
+  border: 1px solid var(--color-warning-divider, #fde047);
+  color: var(--color-warning-primary, #422006);
+  font-size: var(--text-body-s, 0.8125rem);
+  font-weight: var(--font-weight-medium, 500);
+  white-space: nowrap;
+}
+
+/* ── Anfragen: Zusatzzeile und Aktionen ──────────────────── */
+
+.dr-root .dr-request-requester {
+  margin: calc(var(--spacing, 0.25rem) * 1) 0 0;
+  font-size: var(--text-body-s, 0.8125rem);
+  color: var(--color-gray-secondary, #475569);
+}
+
+.dr-root .dr-request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--spacing, 0.25rem) * 2);
+  margin-top: calc(var(--spacing, 0.25rem) * 2);
+}
+
+.dr-root .dr-request-btn {
+  padding: calc(var(--spacing, 0.25rem) * 1) calc(var(--spacing, 0.25rem) * 2.5);
+  font-size: var(--text-body-s, 0.8125rem);
+}
+
+.dr-root .dr-request-link {
+  margin-right: auto;   /* schiebt die Buttons nach rechts */
+  font-size: var(--text-body-s, 0.8125rem);
+  color: var(--color-accent-bright, #2563eb);
+  text-decoration: underline;
+}

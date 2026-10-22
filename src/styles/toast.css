@@ -119,3 +119,30 @@
   min-width: 0;
   animation: dr-toast-out 250ms ease-in forwards;
 }
+
+/* ── Aktions-Toast (z. B. „Zugesagt" + „Rückgängig") ────── */
+
+.dr-toast.status-action {
+  --dr-toast-bar: var(--color-accent-bright, #2563eb);
+  --dr-toast-track: var(--color-accent-divider, #bfdbfe);
+  background: var(--color-accent-b-pale, #dbeafe);
+  color: var(--color-accent-primary, #172554);
+  border-color: var(--color-accent-divider, #bfdbfe);
+}
+
+.dr-toast-action {
+  flex-shrink: 0;
+  padding: calc(var(--spacing, 0.25rem) * 1.5) calc(var(--spacing, 0.25rem) * 3);
+  border: 1px solid var(--color-accent-primary, #172554);
+  border-radius: var(--radius-md, 0.375rem);
+  background: var(--color-foreground-elevated, #ffffff);
+  color: var(--color-accent-primary, #172554);
+  font-size: var(--text-body-s, 0.8125rem);
+  font-weight: var(--font-weight-medium, 500);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dr-toast-action:hover {
+  background: var(--color-accent-b-pale, #dbeafe);
+}
