@@ -3,6 +3,7 @@ import { churchtoolsClient } from '@churchtools/churchtools-client';
 import { renderHeader, renderNav, initNavToggle } from './components/Header';
 import { initRouter } from './router/router';
 import { getChurchName } from './api/info';
+import { initAccessControl } from './api/access-control';
 import './styles/base.css';
 import './styles/layout.css';
 import './styles/form.css';
@@ -74,10 +75,14 @@ observer.observe(document.body);
 updateRootHeight();
 window.addEventListener('resize', updateRootHeight);
 
-document.querySelector('.header')!.innerHTML = renderHeader();
-document.querySelector('.nav')!.innerHTML = renderNav();
+// Rechte laden und Kategorien sicherstellen – BEVOR der Router startet,
+// damit die erste renderRoute() mit geladenen Rechten entscheidet
+await initAccessControl();
 
 await getChurchName();   // Gemeinde-Name cachen, bevor die erste Route rendert
+
+document.querySelector('.header')!.innerHTML = renderHeader();
+document.querySelector('.nav')!.innerHTML = renderNav();
 
 initRouter();
 initNavToggle();

@@ -1,11 +1,13 @@
 import { updateActiveLink } from '../components/Header';
 import { routeHref } from '../utils/base';
 import { getCachedChurchName } from '../api/info';
+import { canAccessPage } from '../api/access-control';
 
 /**
  * Ein Seitenmodul liefert Markup und optional Lebenszyklus-Hooks:
  *
  * - `default()` → HTML-String, wird in `.content` eingesetzt
+ * - `title`     → optionaler Tab-Titel, wird vom Router gesetzt
  * - `init()`    → läuft NACH dem Einsetzen ins DOM (DOM-Refs, Listener, Daten)
  * - `destroy()` → läuft VOR dem Austausch des Markups (Listener/Timer aufräumen)
  *
@@ -59,7 +61,6 @@ async function teardownActiveModule(): Promise<void> {
 }
 
 export async function renderRoute() {
-  // 🔥 HIERHER VERSCHOBE: Erst suchen, wenn die Funktion wirklich läuft
   const contentContainer = document.querySelector<HTMLElement>('.content');
 
   if (!contentContainer) {
@@ -74,7 +75,7 @@ export async function renderRoute() {
   const route = routes.find(r => r.path.test(hash));
 
   // Header aktualisieren
-  updateActiveLink(hash); // ✅ stattdessen
+  updateActiveLink(hash);
 
   // Alte Seite aufräumen, bevor ihr Markup ersetzt wird
   await teardownActiveModule();
@@ -84,9 +85,24 @@ export async function renderRoute() {
       <div class="card">
         <h2>Seite nicht gefunden</h2>
         <p>Route "${hash}" ist nicht definiert.</p>
-        <a href="#/" class="link" style="background">← Dashboard</a>
+        <a href="ccm/dienstradar/#/" class="link" style="background">← Dashboard</a>
       </div>
     `;
+    return;
+  }
+
+  // Rechteprüfung: Nicht berechtigt → „Kein Zugriff"-Karte statt der Seite.
+  // (Router-Ebene, damit direktes Eintippen der URL nichts nützt.)
+  if (!canAccessPage(hash)) {
+    contentContainer.innerHTML = `
+      <div class="card">
+        <h2>Kein Zugriff</h2>
+        <p>Du bist für diesen Bereich nicht berechtigt. Wenn du Zugriff brauchst,
+           wende dich an eine Person mit Verwaltungsrechten.</p>
+        <a href="ccm/dienstradar/#/" class="link">← Dashboard</a>
+      </div>
+    `;
+    document.title = 'Kein Zugriff · DienstRadar';
     return;
   }
 
@@ -104,6 +120,7 @@ export async function renderRoute() {
     // Ab hier ist dieses Modul das aktive – destroy() beim nächsten Wechsel
     activeModule = PageModule;
 
+    // Tab-Titel: Seite · Extension · Gemeinde
     const extensionTitle = 'DienstRadar';
     const church = getCachedChurchName();
     const suffix = church ? `${extensionTitle} · ${church}` : extensionTitle;
@@ -111,8 +128,6 @@ export async function renderRoute() {
     document.title = PageModule.title
       ? `${PageModule.title} · ${suffix}`
       : suffix;
-
-    await PageModule.init?.();
 
     // Lebenszyklus: DOM-Refs, Listener und Daten erst jetzt anfassen
     await PageModule.init?.();

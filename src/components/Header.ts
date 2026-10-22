@@ -1,5 +1,6 @@
 import { routeHref } from '../utils/base';
 import { icon } from './icons';
+import { canAccessPage } from '../api/access-control';
 
 /** Titelzeile: Burger (mobil) + Logo + App-Name */
 export function renderHeader() {
@@ -70,20 +71,22 @@ const FOOTER_LINKS = [
 
 /** Baut die <a>-Elemente einer Link-Gruppe */
 function renderLinkGroup(links: typeof MAIN_LINKS): string {
-  return links.map(l => `
-    <a href="${routeHref(l.route)}" data-route="${l.route}" class="link">
-      ${icon(l.icon)}
-      <span>${l.label}</span>
-    </a>
-  `).join('');
+  return links
+    .filter(l => canAccessPage(l.route))
+    .map(l => `
+      <a href="${routeHref(l.route)}" data-route="${l.route}" class="link">
+        ${icon(l.icon)}
+        <span>${l.label}</span>
+      </a>
+    `).join('');
 }
 
 /** Nav-Links – der Container <nav class="nav"> steht schon im Markup */
 export function renderNav() {
   return `
     ${renderLinkGroup(MAIN_LINKS)}
-    <!-- <div class="nav-divider" role="separator"></div>
-    ${renderLinkGroup(FOOTER_LINKS)} -->
+    <div class="nav-divider" role="separator"></div>
+    ${renderLinkGroup(FOOTER_LINKS)} 
   `;
 }
 
