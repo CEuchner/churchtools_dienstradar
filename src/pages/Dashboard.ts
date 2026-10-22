@@ -7,6 +7,9 @@ import {
     loadServiceRequests,
     type ServiceRequest,
 } from '../api/servicerequests';
+import { canAccessPage } from '../api/access-control';
+import { routeHref } from '../utils/base';
+import { icon } from '../components/icons';
 import {
     loadDashboardEvents,
     resetDashboardEvents,
@@ -202,6 +205,7 @@ export async function init(): Promise<void> {
         renderUpcomingList(upcoming, serviceNames);
         renderRequests();
         renderOpenServices(openEntries, serviceNames);
+        renderQuickActions();
 
         bindOpenQuickButtons();
         bindRequestActions();
@@ -594,6 +598,66 @@ function renderRequests(): void {
     card.innerHTML = `
         <h2>Anfragen</h2>
         <ul class="dr-dashboard-list">${items}</ul>
+    `;
+}
+
+// ── Spalte 3b: Quick-Actions (rechtegefiltert) ───────────────────────
+
+/**
+ * Sprungkarten zu den anderen Modulen der Extension. Interne
+ * Hash-Navigation (kein neuer Tab – dieselbe App-Instanz).
+ *
+ * Rechtegefiltert über canAccessPage(): nur Module, die der Nutzer
+ * über die ChurchTools-Rechteverwaltung (view custom category) sehen
+ * darf, erscheinen als Karte. Ist KEINE erlaubt, wird die Karte
+ * komplett ausgeblendet – eine leere „Schnellzugriff"-Karte wäre
+ * nur Sperrmüll.
+ */
+function renderQuickActions(): void {
+    const card = document.getElementById('dashboardQuickActions');
+    if (!card) return;
+
+    const actions = [
+        {
+            route: '/inactivity',
+            icon: 'magnificant_glass',
+            label: 'Inaktivität finden',
+            description: 'Wer war in welchem Zeitraum in keinen Diensten?',
+        },
+        {
+            route: '/statistics',
+            icon: 'chart',
+            label: 'Statistiken',
+            description: 'Dienste pro Person im Detail',
+        },
+        {
+            route: '/settings',
+            icon: 'settings',
+            label: 'Einstellungen',
+            description: 'Konfiguration der Extension',
+        },
+    ].filter(action => canAccessPage(action.route));
+
+    // Nichts erlaubt → Karte komplett ausblenden
+    if (actions.length === 0) {
+        card.style.display = 'none';
+        return;
+    }
+    card.style.display = '';
+
+    const items = actions.map(action => `
+        <a href="${routeHref(action.route)}" class="dr-quick-action">
+            <span class="dr-quick-action-icon">${icon(action.icon)}</span>
+            <span class="dr-quick-action-text">
+                <span class="dr-quick-action-label">${esc(action.label)}</span>
+                <span class="dr-quick-action-description">${esc(action.description)}</span>
+            </span>
+        </a>
+    `).join('');
+
+    card.innerHTML = `
+        <h2>Schnellzugriff</h2>
+        <div class="dr-quick-action-list">${items}</div>
     `;
 }
 

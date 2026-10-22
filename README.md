@@ -2,7 +2,7 @@
 
 ChurchTools-Extension zum Finden von Personen in einer Gruppe, die in einem bestimmten Zeitraum in bestimmten Diensten nicht aktiv waren – und zum Hinzufügen dieser Personen zu einer Follow-up-Gruppe.
 
-DienstRadar ist eine Single-Page-Extension mit Hash-Router. Neben der Inaktivitäts-Suche bietet das Dashboard einen Überblick über anstehende und offene Dienste sowie Dienstanfragen mit direktem Annehmen/Ablehnen (inkl. Undo). **Version: 1.1.0**
+DienstRadar ist eine Single-Page-Extension mit Hash-Router. Neben der Inaktivitäts-Suche bietet das Dashboard einen Überblick über anstehende und offene Dienste sowie Dienstanfragen mit direktem Annehmen/Ablehnen (inkl. Undo) und rechtegefiltertem Schnellzugriff auf die anderen Module. **Version: 1.1.0**
 
 ## Features
 
@@ -12,7 +12,9 @@ DienstRadar ist eine Single-Page-Extension mit Hash-Router. Neben der Inaktivit�
 - **Anfragen** – offene Dienstanfragen (dedizierter Endpunkt), mit „Angefragt von …", Annehmen/Ablehnen direkt im Dashboard; nach Erfolg erscheint eine Undo-Meldung mit „Rückgängig"-Button (15 s), danach werden alle Karten frisch geladen
 - **Anstehende Dienste** – alle Termine mit eigenen zugesagten Einteilungen, chronologisch, pro Event alle Dienste aufgelistet; der „Event aufrufen"-Button floatet rechts, der Text umfließt ihn (Zeilen unter der Button-Unterkante laufen bis an den rechten Rand)
 - **Offene Dienste** – unbesetzte, sichtbare Dienste mit Zeitraum-Quick-Buttons (14/30/60/90 Tage, Default 60); Dienste als hervorgehobene Pills, sortiert nach den Dienst-Stammdaten (`sortKey`); „Zum Event" öffnet ChurchTools in neuem Tab
-- **Drei Spalten** (`1fr 1fr 2fr`) – Spalte 3 rutscht zuerst unter 1+2, darunter alles gestapelt; Karten reagieren per Container-Queries flexibel
+- **Schnellzugriff** – Sprungkarten zu den anderen Modulen (Inaktivität, Statistiken, Einstellungen); **rechtegefiltert** über `canAccessPage()` – nicht berechtigte Module erscheinen nicht, und ohne jegliche Berechtigung wird die Karte komplett ausgeblendet
+- **Automatische Aktualisierung** – das Dashboard fragt alle 15 s `GET /pollfornews` nach Änderungen an Diensteinteilungen ab und lädt nur bei echten Änderungen die Daten neu; im Hintergrund-Tab wird nicht gepollt, nach der Rückkehr sofort; während eines offenen Undo-Fensters pausiert die Aktualisierung
+- **Drei Spalten** (`1fr 1fr 2fr`) – Spalte 3 rutscht zuerst unter 1+2, darunter alles gestapelt
 
 ### Inaktivitäts-Suche
 
@@ -26,6 +28,7 @@ DienstRadar ist eine Single-Page-Extension mit Hash-Router. Neben der Inaktivit�
 ### Allgemein
 
 - **Seiten-Rechteverwaltung** – der Zugriff auf Inaktivität, Statistiken und Einstellungen wird über die ChurchTools-Rechteverwaltung gesteuert (KV-Kategorien, siehe Rechte-Modell); nicht berechtigte Nutzer sehen die Menüpunkte nicht und erhalten beim direkten URL-Aufruf eine „Kein Zugriff"-Karte
+- **Buttons im ChurchTools-Stil** – einheitliches Button-Vokabular über die ganze Extension: neutral-weiß mit Rand und dezentem Schatten für wählbare/sekundäre Aktionen (Dark Mode: eine Stufe dunkler als die Karte), kräftiges Blau für die Hauptaktion bzw. den ausgewählten Zustand der Schnellauswahl-Buttons
 - **Toast-Benachrichtigungen** – Loading persistent mit Spinner, Erfolg nach 5 s, Fehler nach 10 s, jeweils mit Fortschrittsbalken in passender Farbe; Aktions-Toasts mit „Rückgängig"-Button (15 s); Toasts kollabieren beim Schließen animiert, sodass die darunterliegenden sanft nachrutschen
 - **Tab-Titel** – zeigt Seite und Gemeinde-Namen (z. B. „Inaktivität · DienstRadar · Chris - Testsystem")
 - **Content-Breiten** – Seiten wählen ihre Arbeitsbreite (`dr-content-narrow` = 800px zentriert, oder volle Breite)
@@ -41,6 +44,7 @@ src/
 │   ├── permissions.ts            # Rechte laden (global + gruppenintern)
 │   ├── access-control.ts         # Seiten-Rechteverwaltung (KV-Kategorien)
 │   ├── servicerequests.ts        # Dienstanfragen (lesen, accept/decline/undo)
+│   ├── pollfornews.ts            # Änderungsabfrage fürs Dashboard-Polling
 │   ├── groups.ts                 # Gruppen, Mitglieder, addPersonsToGroup
 │   ├── services.ts               # Dienste, Dienstgruppen
 │   ├── events.ts                 # Termine im Zeitraum (eventServices)
@@ -70,7 +74,7 @@ src/
 │   ├── layout.css                # Root, Header, Nav, Content, Cards, Breiten
 │   ├── form.css                  # Felder, Buttons, Autocomplete, Modal
 │   ├── toast.css                 # Toasts (Root-Level, außerhalb .dr-root)
-│   ├── dashboard.css             # Dashboard: Hero, Grid, Karten, Pills
+│   ├── dashboard.css             # Dashboard: Hero, Grid, Karten, Pills, Quick-Actions
 │   └── inactivity.css            # Seitenspezifisches Layout
 ├── utils/
 │   ├── base.ts                   # BASE-URL + routeHref()
@@ -96,7 +100,7 @@ export function destroy(): void;        // vor dem Austausch des Markups
 
 - `init()` ist der einzige Zeitpunkt, an dem DOM-Referenzen aufgelöst werden (`getElements()` ist bewusst eine Funktion, kein eingefrorenes Objekt) – so zeigen Referenzen nach einem Seitenwechsel nie auf abgehängte Knoten.
 - `init()` ist **idempotent**: Ein erneuter Aufruf räumt zuerst die vorherige Instanz auf (Listener, State), bevor sie neu aufbaut. Ein `instanceId`-Zähler verhindert zudem, dass ein während des Datenladens veralteter Durchlauf noch Elemente oder State verändert.
-- `destroy()` räumt alle Listener ab (Delegation-Listener des Dashboards eingeschlossen).
+- `destroy()` räumt alle Listener und Timer ab (Delegation-Listener und Polling des Dashboards eingeschlossen).
 - Ein Token-Guard im Router verwirft veraltete Rendering-Durchläufe bei schnellem Routenwechsel.
 
 ### Logik von Seiten getrennt
@@ -105,7 +109,7 @@ Wiederverwendbare Zugriffe liegen in `src/api/`, geteilte UI-Bausteine in `src/c
 
 ### Dashboard-Datenfluss
 
-Das Dashboard lädt **einmal** alle Events im Zeitraum (12 Monate zurück, 3 Monate voraus) und leitet alle Karten daraus ab (Cache in `features/dashboard/data.ts`). Nach Annehmen/Ablehnen/Undo werden Events und Anfragen neu geladen und alle Karten neu gebaut – ein gemeinsamer Weg (`reloadAll()`), damit auch die offenen Dienste konsistent bleiben.
+Das Dashboard lädt **einmal** alle Events im Zeitraum (12 Monate zurück, 3 Monate voraus) und leitet alle Karten daraus ab (Cache in `features/dashboard/data.ts`). Nach Annehmen/Ablehnen/Undo und nach einer Änderungs-Meldung des Pollings werden Events und Anfragen neu geladen und alle Karten neu gebaut – ein gemeinsamer Weg (`reloadAll()`), damit auch die offenen Dienste konsistent bleiben. Die Abfrage läuft über den dokumentierten Endpunkt `GET /pollfornews` (`domain_types: event_service`) – im Leerlauf winzige Requests, teure Abrufe nur bei echten Änderungen.
 
 ### CSS
 
@@ -129,7 +133,7 @@ Der Seitenzugriff wird über die **ChurchTools-Rechteverwaltung** gesteuert – 
 | `view custom category` auf „Statistiken" | schaltet `#/statistics` frei |
 | `view custom category` auf „Einstellungen" | schaltet `#/settings` frei |
 
-Die drei Kategorien sind leere Shells, deren einziger Zweck ist, in der Rechteverwaltung berechtigbar zu sein. Die Prüfung läuft über `GET /permissions/global` → `dienstradar['view custom category']` (Kategorie-ID-Liste) und wird zentral in `api/access-control.ts` ausgewertet (`canAccessPage()`).
+Die drei Kategorien sind leere Shells, deren einziger Zweck ist, in der Rechteverwaltung berechtigbar zu sein. Die Prüfung läuft über `GET /permissions/global` → `dienstradar['view custom category']` (Kategorie-ID-Liste) und wird zentral in `api/access-control.ts` ausgewertet (`canAccessPage()`). Dieselbe Prüfung filtert auch die **Schnellzugriff**-Karten im Dashboard.
 
 **Regeln:**
 
@@ -145,7 +149,7 @@ Die Sichtbarkeit von Diensten wird auf Ebene der **Dienstgruppe** ausgewertet (`
 
 1. **`edit servicegroup`** (global) – wer eine Dienstgruppe bearbeiten darf, darf sie sehen und nutzen
 2. **`+entry all`** (gruppenintern) – der Nutzer muss in mindestens einer Gruppe dieses Rechts besitzen, die einem Dienst der Dienstgruppe zugeordnet ist
-3. **`+entry free`** (gruppenintern) – für **offene Dienste** zusätzlich: wer sich in der Dienstgruppe selbst eintragen darf, sieht deren unbesetzte Dienste
+3. **`+entry free`** (gruppenintern) – für **offene Dienste** zusätzlich: wer sich in der Dienstgruppe selbst eintragen darf, sieht deren unbesetzte Dienste (ausschließlich gruppenintern – das globale Recht reicht hier bewusst nicht)
 
 **Weiter vorbereitete, aktuell deaktivierte Prüfungen** (als Kommentar an Ort und Stelle):
 
@@ -159,6 +163,7 @@ Dienste ohne `serviceGroupId` gelten als ungültiger Datenzustand und werden aus
 
 - `GET /info` – Instanz-Name (`siteName`) für den Tab-Titel
 - `GET /whoami` – angemeldete Person (ID als Match-Schlüssel für Einteilungen)
+- `GET /pollfornews?domain_types[]=event_service&since=...` – Änderungsabfrage fürs Dashboard-Polling (liefert im Leerlauf ein leeres Array; `meta.lastPollDate` als `since` für den nächsten Abruf)
 - `GET /groups?only_my_groups=true` – eigene Gruppen für Rechteprüfungen
 - `GET /permissions/global` – Modul-Rechte (`view`, `view custom category`), `view servicegroup`, `edit servicegroup`
 - `GET /permissions/internal/groups` – gruppeninterne Rechte (`+entry all`, `+entry free`)
@@ -215,6 +220,8 @@ npx tsc --noEmit
 2. **Anfragen** (Spalte 1, oben): Annehmen oder Ablehnen – danach erscheint eine Undo-Meldung mit „Rückgängig" (15 s); alle Karten aktualisieren sich automatisch
 3. **Anstehende Dienste** (Spalte 1, darunter): deine zugesagten Einteilungen, chronologisch
 4. **Offene Dienste** (Spalte 2): unbesetzte Dienste im gewählten Zeitraum (Quick-Buttons 14/30/60/90 Tage) – „Zum Event" öffnet ChurchTools zum Eintragen in neuem Tab
+5. **Schnellzugriff** (Spalte 3): Sprungkarten zu Inaktivität, Statistiken und Einstellungen – nur die Module, für die du berechtigt bist
+6. Die Karten aktualisieren sich **automatisch**, wenn sich in ChurchTools etwas an den Diensteinteilungen ändert (z. B. wer sich in einen offenen Dienst einträgt)
 
 ### Inaktivität
 
@@ -233,10 +240,12 @@ npx tsc --noEmit
 |---|---|
 | „Kein Zugriff"-Karte bei einer Seite | Dem Nutzer fehlt `view` oder das `view custom category`-Recht der Seite – Rechte in der ChurchTools-Rechteverwaltung prüfen; danach Reload (Rechte werden einmal pro Session geladen) |
 | Menüpunkt fehlt | Gleiches Recht wie oben – nicht berechtigte Seiten werden im Menü ausgeblendet |
+| Schnellzugriff-Karte fehlt ganz oder zeigt weniger Module | Dieselbe Rechteprüfung wie oben – nur berechtigte Module erscheinen; ohne jegliche Berechtigung wird die Karte ausgeblendet (gewollt) |
 | Konsole: Kategorie „… konnte nicht angelegt werden" | Die Kategorie existiert nicht (oder ist für den Nutzer unsichtbar) und der Nutzer hat nicht beide Setup-Rechte (`administer custom modules` + `create custom category`) – einmalig als Admin ausführen oder Rechte vergeben |
 | „Keine Dienste verfügbar" | Der Nutzer hat weder `edit servicegroup` noch in einer Gruppe `+entry all` – Rechte in ChurchTools prüfen |
 | Offene Dienste leer, obwohl erwartet | Für die Sichtbarkeit offener Dienste reicht zusätzlich auch `+entry free` – prüfen, ob die Dienstgruppe korrekt berechtigt ist |
 | Undo schlägt mit 400 fehl | Der Undo-Body verlangt `personId` (ganze Zahl) – prüfen, dass `undoServiceRequest` mit der eigenen ID aufgerufen wird |
+| Dashboard aktualisiert sich nicht automatisch | Das Polling pausiert bewusst während eines offenen Undo-Fensters und im Hintergrund-Tab; bei anhaltendem Ausfall den `pollfornews`-Request im Netzwerk-Tab prüfen (bei Fehler fällt die Seite auf manuelles Neuladen zurück, funktioniert aber weiterhin) |
 | Suche liefert keine Mitglieder | Gruppenselektion und Mitgliederrecht der ausgewählten Gruppe prüfen |
 | „Keine Berechtigung dieser Gruppe Personen hinzuzufügen" | Recht zum Bearbeiten der **Zielgruppe** fehlt |
 | Toasts erscheinen nicht | Prüfen, ob alle CSS-Imports in `main.ts` stehen; Keyframes testen: `[...document.styleSheets].flatMap(s => [...s.cssRules]).filter(r => r instanceof CSSKeyframesRule).map(r => r.name)` |
@@ -244,7 +253,7 @@ npx tsc --noEmit
 
 ## Changelog
 
-- **v1.1.0** – Rechteverwaltung und Dashboard: Seitenzugriff über die ChurchTools-Rechteverwaltung (KV-Kategorien, Router-Sperre mit „Kein Zugriff"-Karte, Menü-Filterung, Setup-Gate über `administer custom modules` + `create custom category`); Dashboard mit Hero (nächstes Event + Countdown), Anfragen mit Annehmen/Ablehnen und Undo-Meldung (15 s), anstehenden eigenen Diensten und offenen Diensten mit Zeitraum-Quick-Buttons; geteilte Sichtbarkeitslogik (`utils/service-visibility.ts`) um `+entry free` erweitert; Undo-Endpunkt mit `personId`-Pflichtfeld (API-Befund)
+- **v1.1.0** – Rechteverwaltung und Dashboard: Seitenzugriff über die ChurchTools-Rechteverwaltung (KV-Kategorien, Router-Sperre mit „Kein Zugriff"-Karte, Menü-Filterung, Setup-Gate über `administer custom modules` + `create custom category`); Dashboard mit Hero (nächstes Event + Countdown), Anfragen mit Annehmen/Ablehnen und Undo-Meldung (15 s), anstehenden eigenen Diensten und offenen Diensten mit Zeitraum-Quick-Buttons sowie rechtegefiltertem Schnellzugriff; geteilte Sichtbarkeitslogik (`utils/service-visibility.ts`) um `+entry free` erweitert (offene Dienste ausschließlich gruppenintern); automatische Aktualisierung über `pollfornews` (15 s, pausiert bei Undo-Fenster und im Hintergrund-Tab); Buttons und Quick-Buttons im ChurchTools-Stil vereinheitlicht; Undo-Endpunkt mit `personId`-Pflichtfeld (API-Befund)
 - **v1.0.1** – UI-Feinschliff und Bugfixes: Content-Breiten als wiederverwendbare Utilities (800px zentriert für die Inaktivitäts-Seite), Hintergrund/Karten-Farben vereinheitlicht, Tiefen-Effekte für Inputs und Quick-Buttons, Vorschlagsliste slidet beim Öffnen ein, Maus-Auswahl im Autocomplete schließt die Liste (Fix), Sidebar-Drawer ab 1200px mit Nav-Slide, Toasts kollabieren animiert beim Schließen, Tab-Titel mit Gemeinde-Namen, `init()` idempotent gemacht (Fix gegen doppelte Listener)
 - **v1.0.0** – Erste Version: Inaktivitäts-Suche (Gruppen-Autocomplete, rechtebasierte Dienst-Auswahl, Zeitraum-Filter, Sammel-Zuweisung über Modal), Router mit Seiten-Lebenszyklus, CSS auf ChurchTools-Theme-Tokens, Toast-Benachrichtigungen
 

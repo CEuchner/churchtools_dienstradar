@@ -329,3 +329,72 @@
   color: var(--color-accent-bright, #2563eb);
   text-decoration: underline;
 }
+
+/* ── Quick-Actions: Sprungkarten zu den anderen Modulen ─── */
+
+.dr-root .dr-quick-action-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing, 0.25rem) * 2);
+}
+
+/* Gleiche Karten-Logik wie die Person-Karten der Inaktivität:
+   klickbar → Hover zeigt es an (gray-50, die seichte Stufe) */
+.dr-root .dr-quick-action {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing, 0.25rem) * 3);
+  padding: calc(var(--spacing, 0.25rem) * 3);
+  /* CT-Button-Stil wie dr-btn--secondary:
+     Light: weiß auf Karte / Dark: foreground-primary = zinc-800,
+     eine Stufe DUNKLER als die Karte (zinc-700) – klar abgesetzt */
+  background: var(--color-foreground-primary, #ffffff);
+  color: inherit;
+  border: 1px solid var(--color-gray-interactive, #cbd5e1);
+  border-radius: var(--radius-md, 0.375rem);
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.dr-root .dr-quick-action:hover {
+  /* background-primary schaltet sauber um: Light slate-100 (eine Stufe
+     dunkler als weiß), Dark zinc-900 (eine Stufe dunkler als zinc-800) */
+  background: var(--color-background-primary, #f1f5f9);
+  border-color: var(--color-gray-interactive, #cbd5e1);
+}
+
+.dr-root .dr-quick-action-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--spacing, 0.25rem) * 10);   /* 40px */
+  height: calc(var(--spacing, 0.25rem) * 10);
+  border-radius: 9999px;
+  background: var(--color-accent-b-pale, #dbeafe);
+  color: var(--color-accent-primary, #172554);
+}
+
+.dr-root .dr-quick-action-icon svg {
+  width: calc(var(--spacing, 0.25rem) * 5);    /* 20px */
+  height: calc(var(--spacing, 0.25rem) * 5);
+}
+
+.dr-root .dr-quick-action-text {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing, 0.25rem) * 0.5);
+  min-width: 0;
+}
+
+.dr-root .dr-quick-action-label {
+  font-size: var(--text-body-m, 0.875rem);
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--color-gray-primary, #0f172a);
+}
+
+.dr-root .dr-quick-action-description {
+  font-size: var(--text-body-s, 0.8125rem);
+  color: var(--color-gray-secondary, #475569);
+}
