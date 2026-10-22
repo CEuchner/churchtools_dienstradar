@@ -77,27 +77,29 @@ export function isServiceGroupVisible(
 }
 
 /**
- * Sichtbarkeit von OFFENEN (unbesetzten) Diensten – zusätzlich zum
- * allgemeinen Sichtbarkeitsrecht reicht auch das Recht zur
- * Selbsteintragung (`+entry free`) in einer zugeordneten Gruppe.
+ * Sichtbarkeit von OFFENEN (unbesetzten) Diensten.
+ *
+ * Bewusst OHNE globale Rechte: Nur die gruppeninternen Rechte
+ * (`+entry all` ODER `+entry free`) geben die Lücken-Liste frei.
+ * Das globale `edit servicegroup` reicht hier NICHT – es berechtigt
+ * zur allgemeinen Sichtbarkeit (Inaktivität), nicht zum Belegen
+ * offener Dienste.
  */
 export function isServiceGroupOpenEntryVisible(
     serviceGroupId: number,
     services: Service[],
     perms: UserPermissions
 ): boolean {
-    if (isServiceGroupVisible(serviceGroupId, services, perms)) return true;
-
-    const freeGroups = perms.groupSelfEntryGroupIds;
-    if (!freeGroups || freeGroups.size === 0) return false;
-
     const meta = getIndex(services).get(serviceGroupId);
     if (!meta) return false;
 
+    // Dienste ganz ohne Gruppenzuordnung: Es gibt keine Gruppe, der man
+    // ein gruppeninternes Recht geben könnte – sie gelten als offen sichtbar.
     if (meta.hasUnrestricted) return true;
 
     for (const groupId of meta.groupIds) {
-        if (freeGroups.has(groupId)) return true;
+        if (perms.groupServiceGroupIds.has(groupId)) return true;   // +entry all
+        if (perms.groupSelfEntryGroupIds.has(groupId)) return true; // +entry free
     }
 
     return false;

@@ -42,9 +42,10 @@ export function eventStartDate(event: Event): Date {
     return new Date(event.startDate ?? '');
 }
 
-/** Deutsche Kurzform für Listen/Hero, z. B. „Fr, 23.10. · 01:00". */
-export function formatEventDateTime(event: Event): string {
-    const date = eventStartDate(event);
+/** Deutsche Kurzform für Listen/Hero, z. B. „Fr, 23.10. · 01:00".
+ *  Akzeptiert jedes Objekt mit startDate (Event ODER ServiceRequest.event). */
+export function formatEventDateTime(event: { startDate?: string }): string {
+    const date = new Date(event.startDate ?? '');
     if (Number.isNaN(date.getTime())) return '';
 
     const weekday = date.toLocaleDateString('de-DE', { weekday: 'short' });
@@ -67,12 +68,14 @@ let personIdentifierCache: string | null = null;
  * Einmal geladen, danach gecacht.
  */
 export async function getPersonIdentifier(): Promise<string> {
-    if (personIdentifierCache) return personIdentifierCache;
+    if (personIdentifierCache !== null) return personIdentifierCache;
 
     const response = await churchtoolsClient.get<any>('/whoami');
     const me = response?.data ?? response;
-    personIdentifierCache = me?.domainIdentifier ?? String(me?.id ?? '');
-    return personIdentifierCache;
+
+    const identifier = me?.domainIdentifier ?? String(me?.id ?? '');
+    personIdentifierCache = identifier;
+    return identifier;
 }
 
 // ── Event-Abruf (einmal laden, alle Spalten leiten daraus ab) ────────

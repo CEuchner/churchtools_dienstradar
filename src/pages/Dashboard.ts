@@ -26,6 +26,8 @@ import {
     type OwnEventEntry,
     type OpenServiceEntry,
 } from '../features/dashboard/data';
+import type { Service } from '../utils/ct-types';
+import { pollForNews } from '../api/pollfornews';
 
 export const title = 'Dashboard';
 
@@ -127,12 +129,34 @@ let instanceId = 0;
 /** Gewählter Zeitraum der Offene-Dienste-Karte (Tage). */
 let openWindowDays = 60;
 
+// ── Polling (Phase 6) ────────────────────────────────────────────────
+
+/** Intervall der Änderungsabfrage. CT selbst pollt ca. alle 10 s –
+ *  wir nehmen 15 s, der Preis pro Tick ist minimal. */
+const POLL_INTERVAL_MS = 15_000;
+
+/** Die Domäne, deren Änderungen uns interessieren: Diensteinteilungen
+ *  (Eintragungen, Annahmen, Ablehnungen). */
+const POLL_DOMAIN_TYPES = ['event_service'];
+
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+/** Basis für den nächsten pollfornews-Abruf (ISO-Zeitstempel). */
+let lastPollDate = new Date().toISOString();
+
+/**
+ * true, solange ein Undo-Fenster offen ist („Rückgängig" verfügbar).
+ * Das Polling pausiert dann – ein Reload könnte die Anzeige verändern,
+ * während der Nutzer über Undo entscheidet.
+ */
+let undoWindowOpen = false;
+
 // ── Modul-Zustand für Neu-Rendern ohne Daten-Argumente ───────────────
 
 let lastPersonId = 0;
 let lastPersonIdentifier = '';
 let lastServiceNames: Map<number, ServiceMeta> = new Map();
-let lastServices = [] as import('../../utils/ct-types').Service[];
+let lastServices: Service[] = [];
 let lastPerms = null as Awaited<ReturnType<typeof loadUserPermissions>> | null;
 let lastOpenEntries: OpenServiceEntry[] = [];
 let lastRequests: ServiceRequest[] = [];
@@ -181,6 +205,7 @@ export async function init(): Promise<void> {
 
         bindOpenQuickButtons();
         bindRequestActions();
+        startPolling();
     } catch (error) {
         if (id !== instanceId) return;
 
@@ -196,6 +221,7 @@ export async function init(): Promise<void> {
 }
 
 export function destroy(): void {
+    stopPolling();
     instanceId++;
 
     if (openQuickHandler) {
@@ -286,6 +312,8 @@ function bindRequestActions(): void {
                 await declineServiceRequest(eventId, requestId);
             }
 
+            undoWindowOpen = true;
+
             // Frischer Stand für ALLE Karten – inkl. Offene Dienste
             await reloadAll();
 
@@ -294,6 +322,12 @@ function bindRequestActions(): void {
                 'Rückgängig',
                 () => undoRequest(eventId, requestId)
             );
+
+            // Undo-Fenster automatisch schließen, wenn der Toast ohne Klick
+            // abläuft. Muss mit UNDO_TIMEOUT_MS in toast.ts übereinstimmen.
+            // Klickt der Nutzer vorher: undoRequest() setzt die Variable
+            // schon auf false – das doppelte Zurücksetzen ist harmlos.
+            setTimeout(() => { undoWindowOpen = false; }, 15_000);
         } catch (error) {
             showStatus(
                 'Fehler: ' +
@@ -312,6 +346,7 @@ function bindRequestActions(): void {
  * Läuft im Kontext des Undo-Toasts – Fehler erscheinen als Toast.
  */
 async function undoRequest(eventId: number, requestId: number): Promise<void> {
+    undoWindowOpen = false;
     showStatus('🔄 Aktion wird zurückgenommen…', 'loading');
 
     try {
@@ -560,4 +595,50 @@ function renderRequests(): void {
         <h2>Anfragen</h2>
         <ul class="dr-dashboard-list">${items}</ul>
     `;
+}
+
+// ── Polling ──────────────────────────────────────────────────────────
+
+/**
+ * Ein Poll-Tick: Fragment-Anfrage nach Änderungen, nur bei Treffern
+ * wird reloadAll() ausgeführt. Wird vom Intervall UND vom
+ * visibilitychange genutzt (Rückkehr in den Tab → sofort ein Tick).
+ */
+async function pollTick(): Promise<void> {
+    if (undoWindowOpen) return;
+    if (document.visibilityState !== 'visible') return;
+
+    try {
+        const result = await pollForNews(POLL_DOMAIN_TYPES, lastPollDate);
+        lastPollDate = result.lastPollDate;
+
+        if (result.hasChanges) {
+            await reloadAll();
+        }
+    } catch {
+        // Still: Ein fehlgeschlagener Poll-Zyklus ist kein Nutzerfehler –
+        // der nächste Tick versucht es erneut. Die Seite funktioniert
+        // ohne Auto-Refresh weiterhin voll.
+    }
+}
+
+function startPolling(): void {
+    stopPolling();   // kein doppeltes Intervall bei erneutem init()
+
+    pollTimer = setInterval(() => { void pollTick(); }, POLL_INTERVAL_MS);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+}
+
+function stopPolling(): void {
+    if (pollTimer !== null) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+    }
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+}
+
+/** Bei Rückkehr in den sichtbaren Tab: sofort ein Poll-Tick. */
+function handleVisibilityChange(): void {
+    if (document.visibilityState !== 'visible') return;
+    void pollTick();
 }
