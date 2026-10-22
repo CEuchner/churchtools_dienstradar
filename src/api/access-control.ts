@@ -37,11 +37,23 @@ interface AccessState {
 let access: AccessState | null = null;
 
 /**
- * Hat der aktuelle Nutzer das Recht, Custom Modules zu verwalten?
- * Pfad laut API: data → churchcore → 'administer custom modules' (boolean).
+ * Darf der aktuelle Nutzer die Zugriffs-Kategorien anlegen?
+ *
+ * Zwei Rechte müssen zusammenkommen:
+ *  - `administer custom modules` (churchcore): nur diese Personengruppe
+ *    soll Setup-Aktionen überhaupt ausführen dürfen
+ *  - `create custom category` (granular): ChurchTools erzwingt dieses
+ *    Recht serverseitig beim Anlegen – ohne es wäre der Versuch ein
+ *    garantiertes 403 (Vorbefund).
+ *
+ * Wichtig: Auch mit beiden Rechten bleibt "Kategorie fehlt" mehrdeutig,
+ * weil die Kategorien-Liste rechtegefiltert ist. Das Gate minimiert nur
+ * die sinnlosen Versuche; ein 403/400 beim Create wird trotzdem
+ * abgefangen (siehe warn unten).
  */
-function canAdministerCustomModules(globalPerms: any): boolean {
-    return globalPerms?.churchcore?.['administer custom modules'] === true;
+function canCreateCategories(globalPerms: any): boolean {
+    return globalPerms?.churchcore?.['administer custom modules'] === true
+        && globalPerms?.dienstradar?.['create custom category'] === true;
 }
 
 /**
@@ -70,9 +82,9 @@ export async function initAccessControl(): Promise<void> {
 
     // ── 2. Kategorien lesen – und NUR mit Admin-Recht ergänzen ──────────
     try {
-        const isAdmin = canAdministerCustomModules(globalPerms);
+        const canCreate = canCreateCategories(globalPerms);
 
-        const module = isAdmin
+        const module = canCreate
             ? await getOrCreateModule(EXTENSION_KEY, 'DienstRadar', 'Dienstplanung und Statistiken')
             : await getModule(EXTENSION_KEY);
 
@@ -85,7 +97,7 @@ export async function initAccessControl(): Promise<void> {
                 continue;
             }
 
-            if (!isAdmin) {
+            if (!canCreate) {
                 // Kein Admin → bewusst NICHT anlegen (siehe Header-Kommentar).
                 // "Fehlt" heißt hier meist nur: für diesen Nutzer nicht sichtbar.
                 console.warn(
