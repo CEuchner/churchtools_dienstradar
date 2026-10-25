@@ -1,5 +1,9 @@
 import { showStatus, showActionToast, hideStatus } from '../components/toast';
 import { loadUserPermissions } from '../api/permissions';
+import { pollForNews } from '../api/pollfornews';
+import { canAccessPage } from '../api/access-control';
+import { routeHref } from '../utils/base';
+import { icon } from '../components/icons';
 import {
     acceptServiceRequest,
     declineServiceRequest,
@@ -7,9 +11,6 @@ import {
     loadServiceRequests,
     type ServiceRequest,
 } from '../api/servicerequests';
-import { canAccessPage } from '../api/access-control';
-import { routeHref } from '../utils/base';
-import { icon } from '../components/icons';
 import {
     loadDashboardEvents,
     resetDashboardEvents,
@@ -29,8 +30,15 @@ import {
     type OwnEventEntry,
     type OpenServiceEntry,
 } from '../features/dashboard/data';
-import type { Service } from '../utils/ct-types';
-import { pollForNews } from '../api/pollfornews';
+import {
+    STATS_WINDOWS,
+    computeStats,
+    renderStatsChart,
+    type StatsMode,
+    type StatsChart,
+    type StatsPoint,
+} from '../features/dashboard/statistics';
+import type { Event as CtEvent, Service } from '../utils/ct-types';
 
 export const title = 'Dashboard';
 
@@ -109,7 +117,7 @@ export default function Dashboard() {
           </section>
 
           <section class="dr-dashboard-col dr-dashboard-col--3" aria-label="Statistik und Aktionen">
-            <div class="card dr-dashboard-card" id="dashboardStats">
+            <div class="card dr-dashboard-card dr-stats-card" id="dashboardStats">
               <h2>Meine Statistik</h2>
               <p class="dr-empty">Wird geladen…</p>
             </div>
@@ -132,28 +140,6 @@ let instanceId = 0;
 /** Gewählter Zeitraum der Offene-Dienste-Karte (Tage). */
 let openWindowDays = 60;
 
-// ── Polling (Phase 6) ────────────────────────────────────────────────
-
-/** Intervall der Änderungsabfrage. CT selbst pollt ca. alle 10 s –
- *  wir nehmen 15 s, der Preis pro Tick ist minimal. */
-const POLL_INTERVAL_MS = 15_000;
-
-/** Die Domäne, deren Änderungen uns interessieren: Diensteinteilungen
- *  (Eintragungen, Annahmen, Ablehnungen). */
-const POLL_DOMAIN_TYPES = ['event_service'];
-
-let pollTimer: ReturnType<typeof setInterval> | null = null;
-
-/** Basis für den nächsten pollfornews-Abruf (ISO-Zeitstempel). */
-let lastPollDate = new Date().toISOString();
-
-/**
- * true, solange ein Undo-Fenster offen ist („Rückgängig" verfügbar).
- * Das Polling pausiert dann – ein Reload könnte die Anzeige verändern,
- * während der Nutzer über Undo entscheidet.
- */
-let undoWindowOpen = false;
-
 // ── Modul-Zustand für Neu-Rendern ohne Daten-Argumente ───────────────
 
 let lastPersonId = 0;
@@ -163,23 +149,50 @@ let lastServices: Service[] = [];
 let lastPerms = null as Awaited<ReturnType<typeof loadUserPermissions>> | null;
 let lastOpenEntries: OpenServiceEntry[] = [];
 let lastRequests: ServiceRequest[] = [];
+let lastEvents: CtEvent[] = [];
 
-/** Delegation-Listener der Offene-Dienste-Karte (Zeitraum-Buttons). */
+// ── Statistik-Zustand ────────────────────────────────────────────────
+
+/** Default-Zeitraum (Stellschraube: eine der IDs aus STATS_WINDOWS). */
+let statsWindowId = '8w';
+let statsMode: StatsMode = 'individual';
+let statsChart: StatsChart = 'bars';
+
+/** Punkte des aktuell gerenderten Diagramms – Datenquelle des Tooltips. */
+let lastStatsPoints: StatsPoint[] = [];
+
+// ── Polling ──────────────────────────────────────────────────────────
+
+const POLL_INTERVAL_MS = 15_000;
+const POLL_DOMAIN_TYPES = ['event_service'];
+
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+let lastPollDate = new Date().toISOString();
+
+/** true, solange ein Undo-Fenster offen ist – Polling pausiert dann. */
+let undoWindowOpen = false;
+
+// ── Delegation-Listener ──────────────────────────────────────────────
+
 let openQuickHandler: ((event: Event) => void) | null = null;
-
-/** Delegation-Listener der Anfragen-Karte (Annehmen/Ablehnen). */
 let requestActionHandler: ((event: Event) => void) | null = null;
+let statsHandler: ((event: Event) => void) | null = null;
+let statsTipHandler: ((event: Event) => void) | null = null;
+let statsTipLeaveHandler: (() => void) | null = null;
+
+// ── Statistik: Resize-Handling ───────────────────────────────────────
+
+let statsResizeObserver: ResizeObserver | null = null;
+let lastStatsWidth = 0;
+let statsRafId: number | null = null;
 
 export async function init(): Promise<void> {
     const id = ++instanceId;
 
     try {
-        // Erst die eigene ID (ein whoami-Aufruf, gecacht)…
         const personId = await getPersonId();
         const personIdentifier = String(personId);
 
-        // …dann alles Weitere parallel – inkl. der Anfragen vom
-        // dedizierten Endpunkt
         const [events, serviceNames, services, perms, requestList] = await Promise.all([
             loadDashboardEvents(),
             getServiceMetaMap(),
@@ -188,7 +201,6 @@ export async function init(): Promise<void> {
             loadServiceRequests(personId),
         ]);
 
-        // Während des Ladens Seite verlassen? Dann nichts mehr anfassen.
         if (id !== instanceId) return;
 
         lastPersonId = personId;
@@ -197,6 +209,7 @@ export async function init(): Promise<void> {
         lastServices = services;
         lastPerms = perms;
         lastRequests = requestList;
+        lastEvents = events;
 
         const upcoming = getUpcomingOwnEvents(events, personIdentifier);
         const openEntries = getOpenServices(events, services, perms);
@@ -205,10 +218,15 @@ export async function init(): Promise<void> {
         renderUpcomingList(upcoming, serviceNames);
         renderRequests();
         renderOpenServices(openEntries, serviceNames);
+        renderStats();
         renderQuickActions();
 
         bindOpenQuickButtons();
         bindRequestActions();
+        bindStatsControls();
+        bindStatsTooltip();
+        bindStatsResize();
+
         startPolling();
     } catch (error) {
         if (id !== instanceId) return;
@@ -225,8 +243,9 @@ export async function init(): Promise<void> {
 }
 
 export function destroy(): void {
-    stopPolling();
     instanceId++;
+
+    stopPolling();
 
     if (openQuickHandler) {
         document.getElementById('dashboardOpenServices')
@@ -239,6 +258,72 @@ export function destroy(): void {
             ?.removeEventListener('click', requestActionHandler);
         requestActionHandler = null;
     }
+
+    if (statsHandler) {
+        document.getElementById('dashboardStats')
+            ?.removeEventListener('click', statsHandler);
+        statsHandler = null;
+    }
+
+    if (statsTipHandler) {
+        document.getElementById('dashboardStats')
+            ?.removeEventListener('pointerover', statsTipHandler);
+        statsTipHandler = null;
+    }
+
+    if (statsTipLeaveHandler) {
+        document.getElementById('dashboardStats')
+            ?.removeEventListener('pointerleave', statsTipLeaveHandler);
+        statsTipLeaveHandler = null;
+    }
+
+    if (statsResizeObserver) {
+        statsResizeObserver.disconnect();
+        statsResizeObserver = null;
+    }
+
+    if (statsRafId !== null) {
+        cancelAnimationFrame(statsRafId);
+        statsRafId = null;
+    }
+}
+
+// ── Polling ──────────────────────────────────────────────────────────
+
+async function pollTick(): Promise<void> {
+    if (undoWindowOpen) return;
+    if (document.visibilityState !== 'visible') return;
+
+    try {
+        const result = await pollForNews(POLL_DOMAIN_TYPES, lastPollDate);
+        lastPollDate = result.lastPollDate;
+
+        if (result.hasChanges) {
+            await reloadAll();
+        }
+    } catch {
+        // Still: fehlgeschlagener Poll-Zyklus ist kein Nutzerfehler
+    }
+}
+
+function startPolling(): void {
+    stopPolling();
+
+    pollTimer = setInterval(() => { void pollTick(); }, POLL_INTERVAL_MS);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+}
+
+function stopPolling(): void {
+    if (pollTimer !== null) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+    }
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+}
+
+function handleVisibilityChange(): void {
+    if (document.visibilityState !== 'visible') return;
+    void pollTick();
 }
 
 /** Setzt den EINEN Delegation-Listener für die Quick-Buttons der Karte. */
@@ -251,9 +336,6 @@ function bindOpenQuickButtons(): void {
         if (!btn?.dataset.days) return;
 
         openWindowDays = parseInt(btn.dataset.days, 10);
-
-        // Neu-Rendern setzt die Buttons samt aktiver Markierung neu –
-        // der Listener hängt an der Karte und bleibt erhalten (Delegation).
         renderOpenServices(lastOpenEntries, lastServiceNames);
     };
 
@@ -262,8 +344,7 @@ function bindOpenQuickButtons(): void {
 
 /**
  * Lädt Events und Anfragen frisch und baut ALLE Karten neu – der gemeinsame
- * Weg nach Annehmen, Ablehnen UND Undo. Dadurch stimmen auch die offenen
- * Dienste (z. B. nach einer Absage) wieder mit dem Stand in ChurchTools.
+ * Weg nach Annehmen, Ablehnen, Undo UND Polling-Änderung.
  */
 async function reloadAll(): Promise<void> {
     resetDashboardEvents();
@@ -273,6 +354,7 @@ async function reloadAll(): Promise<void> {
         loadServiceRequests(lastPersonId),
     ]);
     lastRequests = requestList;
+    lastEvents = events;
 
     const upcoming = getUpcomingOwnEvents(events, lastPersonIdentifier);
     const openEntries = lastPerms
@@ -283,13 +365,9 @@ async function reloadAll(): Promise<void> {
     renderUpcomingList(upcoming, lastServiceNames);
     renderRequests();
     renderOpenServices(openEntries, lastServiceNames);
+    renderStats();
 }
 
-/**
- * Delegation-Listener der Anfragen-Karte: Annehmen/Ablehnen direkt im
- * Dashboard. Nach Erfolg erscheint eine Undo-Meldung („Zugesagt"/„Abgesagt"
- * + „Rückgängig", 15 s), und ALLE Ansichten werden frisch geladen.
- */
 function bindRequestActions(): void {
     const card = document.getElementById('dashboardRequests');
     if (!card) return;
@@ -317,8 +395,6 @@ function bindRequestActions(): void {
             }
 
             undoWindowOpen = true;
-
-            // Frischer Stand für ALLE Karten – inkl. Offene Dienste
             await reloadAll();
 
             showActionToast(
@@ -345,10 +421,6 @@ function bindRequestActions(): void {
     card.addEventListener('click', requestActionHandler);
 }
 
-/**
- * Nimmt eine Annahme/Ablehnung zurück und lädt alles frisch.
- * Läuft im Kontext des Undo-Toasts – Fehler erscheinen als Toast.
- */
 async function undoRequest(eventId: number, requestId: number): Promise<void> {
     undoWindowOpen = false;
     showStatus('🔄 Aktion wird zurückgenommen…', 'loading');
@@ -370,12 +442,6 @@ async function undoRequest(eventId: number, requestId: number): Promise<void> {
 
 // ── Hero ─────────────────────────────────────────────────────────────
 
-/**
- * Hero mit dem NÄCHSTEN EVENT:
- * Datum-Block links (große Tageszahl), Titel + Countdown daneben,
- * darunter das lange Datum und die zugesagten Dienste als Pills,
- * rechts der Button „Event aufrufen" (neuer Tab).
- */
 function renderHero(
     entry: OwnEventEntry | undefined,
     serviceNames: Map<number, ServiceMeta>
@@ -416,11 +482,6 @@ function renderHero(
 
 // ── Spalte 1: Anstehende Dienste ─────────────────────────────────────
 
-/**
- * Der Button floatet rechts, Datum + Titel fließen als Text um ihn herum;
- * Zeilen unter der Button-Unterkante laufen bis an den rechten Rand.
- * Darunter ALLE zugesagten Dienste – bewusst ohne „+1 weitere"-Kürzung.
- */
 function renderUpcomingList(
     upcoming: OwnEventEntry[],
     serviceNames: Map<number, ServiceMeta>
@@ -459,13 +520,6 @@ function renderUpcomingList(
 
 // ── Spalte 2b: Offene Dienste ────────────────────────────────────────
 
-/**
- * Unbesetzte, sichtbare Dienste im gewählten Zeitraum
- * (Quick-Buttons 14/30/60/90 Tage, Default 60). Kein direktes Eintragen
- * hier – der Button öffnet das Event in ChurchTools in einem neuen Tab.
- * Die Dienste-Pills sind nach den Dienst-Stammdaten sortiert
- * (Service.sortKey = Reihenfolge im Dienst-Modul).
- */
 function renderOpenServices(
     openEntries: OpenServiceEntry[],
     serviceNames: Map<number, ServiceMeta>
@@ -507,8 +561,6 @@ function renderOpenServices(
                     ? serviceNames.get(service.serviceId)?.sortKey ?? Number.MAX_SAFE_INTEGER
                     : Number.MAX_SAFE_INTEGER,
             }))
-            // Sortierung nach den Stammdaten: Service.sortKey = die Reihenfolge,
-            // wie sie im Dienst-Modul unter Stammdaten hinterlegt ist
             .sort((a, b) => a.sortKey - b.sortKey)
             .map(item => `<span class="dr-open-pill">${esc(item.name)}</span>`)
             .join('');
@@ -532,13 +584,8 @@ function renderOpenServices(
     `;
 }
 
-// ── Spalte 2a: Anfragen (dedizierter Endpunkt + Annehmen/Ablehnen) ───
+// ── Spalte 2a: Anfragen ──────────────────────────────────────────────
 
-/**
- * Offene Anfragen an die angemeldete Person, aus dem dedizierten Endpunkt
- * GET /persons/{id}/servicerequests. Gefiltert auf isAccepted === false
- * und zukünftige Events; sortiert nach Event-Datum.
- */
 function renderRequests(): void {
     const card = document.getElementById('dashboardRequests');
     if (!card) return;
@@ -581,15 +628,17 @@ function renderRequests(): void {
                     ? `<p class="dr-request-requester">Angefragt von ${esc(request.requesterPerson.title)}</p>`
                     : ''}
                 <div class="dr-request-actions">
-                    ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener" class="dr-request-link">Zum Event</a>` : ''}
-                    <button type="button" class="dr-btn dr-btn--secondary dr-request-btn"
-                            data-action="decline"
-                            data-request-id="${request.id}"
-                            data-event-id="${request.event!.id}">Ablehnen</button>
-                    <button type="button" class="dr-btn dr-btn--primary dr-request-btn"
-                            data-action="accept"
-                            data-request-id="${request.id}"
-                            data-event-id="${request.event!.id}">Annehmen</button>
+                    ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener" class="dr-btn dr-btn--secondary dr-request-link dr-request-btn">Zum Event</a>` : ''}
+                    <div class="dr-request-buttons">
+                        <button type="button" class="dr-btn dr-btn--secondary dr-request-btn"
+                                data-action="decline"
+                                data-request-id="${request.id}"
+                                data-event-id="${request.event!.id}">Ablehnen</button>
+                        <button type="button" class="dr-btn dr-btn--primary dr-request-btn"
+                                data-action="accept"
+                                data-request-id="${request.id}"
+                                data-event-id="${request.event!.id}">Annehmen</button>
+                    </div>
                 </div>
             </li>
         `;
@@ -601,18 +650,85 @@ function renderRequests(): void {
     `;
 }
 
-// ── Spalte 3b: Quick-Actions (rechtegefiltert) ───────────────────────
+// ── Spalte 3a: Eigene Statistik ──────────────────────────────────────
 
-/**
- * Sprungkarten zu den anderen Modulen der Extension. Interne
- * Hash-Navigation (kein neuer Tab – dieselbe App-Instanz).
- *
- * Rechtegefiltert über canAccessPage(): nur Module, die der Nutzer
- * über die ChurchTools-Rechteverwaltung (view custom category) sehen
- * darf, erscheinen als Karte. Ist KEINE erlaubt, wird die Karte
- * komplett ausgeblendet – eine leere „Schnellzugriff"-Karte wäre
- * nur Sperrmüll.
- */
+function renderStats(): void {
+    const card = document.getElementById('dashboardStats');
+    if (!card) return;
+
+    const win = STATS_WINDOWS.find(w => w.id === statsWindowId) ?? STATS_WINDOWS[1];
+    const points = computeStats(lastEvents, lastPersonIdentifier, win, statsMode, lastServiceNames);
+    lastStatsPoints = points;
+
+    const windowButtons = STATS_WINDOWS.map(w => `
+        <button type="button" class="dr-quick${w.id === win.id ? ' active' : ''}"
+                data-stats="window" data-value="${w.id}">${w.label}</button>
+    `).join('');
+
+    const modeButtons = ([
+        { id: 'individual', label: 'Einzeln' },
+        { id: 'perEvent', label: 'Pro Event' },
+        { id: 'perDay', label: 'Pro Tag' },
+    ] as Array<{ id: StatsMode; label: string }>).map(m => `
+        <button type="button" class="dr-quick${m.id === statsMode ? ' active' : ''}"
+                data-stats="mode" data-value="${m.id}">${m.label}</button>
+    `).join('');
+
+    const chartButtons = ([
+        { id: 'bars', label: 'Säulen' },
+        { id: 'line', label: 'Linien' },
+    ] as Array<{ id: StatsChart; label: string }>).map(c => `
+        <button type="button" class="dr-quick${c.id === statsChart ? ' active' : ''}"
+                data-stats="chart" data-value="${c.id}">${c.label}</button>
+    `).join('');
+
+    // Verfügbare Breite: Karten-Innenbreite (padding: spacing*5 = 20px pro Seite).
+    // Im Neben-einander-Layout (Container-Query ab 800px Innenbreite) nimmt die
+    // Buttons-Spalte 240px + 16px Gap weg – MUSS zur flex-basis in dashboard.css
+    // passen (dr-stats-controls) und zum @container-Schwellwert (50rem).
+    const cardInner = Math.max(0, card.clientWidth - 40);
+    const isRowLayout = cardInner >= 800;
+    const controlsWidth = isRowLayout ? 240 + 16 : 0;
+    const availableWidth = Math.max(0, cardInner - controlsWidth);
+
+    card.innerHTML = `
+        <h2>Meine Statistik</h2>
+        <div class="dr-stats-body">
+            <div class="dr-stats-controls">
+                <div class="dr-quick-buttons" role="group" aria-label="Zeitraum">${windowButtons}</div>
+                <div class="dr-quick-buttons" role="group" aria-label="Kumulierung">${modeButtons}</div>
+                <div class="dr-quick-buttons" role="group" aria-label="Diagrammform">${chartButtons}</div>
+            </div>
+            ${renderStatsChart(points, statsChart, availableWidth)}
+        </div>
+    `;
+}
+
+/** EIN Delegation-Listener für alle drei Button-Gruppen der Statistik-Karte. */
+function bindStatsControls(): void {
+    const card = document.getElementById('dashboardStats');
+    if (!card) return;
+
+    statsHandler = (event: Event) => {
+        const btn = (event.target as HTMLElement).closest<HTMLElement>('button[data-stats]');
+        if (!btn) return;
+
+        const type = btn.dataset.stats;
+        const value = btn.dataset.value ?? '';
+        if (!type || !value) return;
+
+        if (type === 'window') statsWindowId = value;
+        else if (type === 'mode') statsMode = value as StatsMode;
+        else if (type === 'chart') statsChart = value as StatsChart;
+
+        renderStats();
+    };
+
+    card.addEventListener('click', statsHandler);
+}
+
+// ── Spalte 3b: Quick-Actions ─────────────────────────────────────────
+
 function renderQuickActions(): void {
     const card = document.getElementById('dashboardQuickActions');
     if (!card) return;
@@ -638,7 +754,6 @@ function renderQuickActions(): void {
         },
     ].filter(action => canAccessPage(action.route));
 
-    // Nichts erlaubt → Karte komplett ausblenden
     if (actions.length === 0) {
         card.style.display = 'none';
         return;
@@ -661,48 +776,118 @@ function renderQuickActions(): void {
     `;
 }
 
-// ── Polling ──────────────────────────────────────────────────────────
+// ── Statistik: Hover-Tooltip ─────────────────────────────────────────
 
 /**
- * Ein Poll-Tick: Fragment-Anfrage nach Änderungen, nur bei Treffern
- * wird reloadAll() ausgeführt. Wird vom Intervall UND vom
- * visibilitychange genutzt (Rückkehr in den Tab → sofort ein Tick).
+ * Zeigt pro Diagramm-Spalte ein Tooltip mit den einzelnen Einteilungen
+ * („welche Dienste wann"). Delegation auf der Karte – überlebt das
+ * Neu-Rendern der Buttons und des Diagramms, wird in destroy() abgeräumt.
  */
-async function pollTick(): Promise<void> {
-    if (undoWindowOpen) return;
-    if (document.visibilityState !== 'visible') return;
+function bindStatsTooltip(): void {
+    const card = document.getElementById('dashboardStats');
+    if (!card) return;
 
-    try {
-        const result = await pollForNews(POLL_DOMAIN_TYPES, lastPollDate);
-        lastPollDate = result.lastPollDate;
-
-        if (result.hasChanges) {
-            await reloadAll();
+    statsTipHandler = (event: Event) => {
+        const hit = (event.target as Element).closest<SVGRectElement>('[data-stats-index]');
+        if (!hit) {
+            hideStatsTip();
+            return;
         }
-    } catch {
-        // Still: Ein fehlgeschlagener Poll-Zyklus ist kein Nutzerfehler –
-        // der nächste Tick versucht es erneut. Die Seite funktioniert
-        // ohne Auto-Refresh weiterhin voll.
-    }
+
+        const index = parseInt(hit.dataset.statsIndex ?? '', 10);
+        const point = lastStatsPoints[index];
+        if (!point || point.entries.length === 0) {
+            hideStatsTip();
+            return;
+        }
+
+        showStatsTip(hit, point);
+    };
+
+    statsTipLeaveHandler = () => hideStatsTip();
+
+    card.addEventListener('pointerover', statsTipHandler);
+    card.addEventListener('pointerleave', statsTipLeaveHandler);
 }
 
-function startPolling(): void {
-    stopPolling();   // kein doppeltes Intervall bei erneutem init()
+/** Baut das Tooltip über der gehoverten Spalte. */
+function showStatsTip(hit: SVGRectElement, point: StatsPoint): void {
+    const wrap = document.querySelector<HTMLElement>('#dashboardStats .dr-stats-wrap');
+    if (!wrap) return;
 
-    pollTimer = setInterval(() => { void pollTick(); }, POLL_INTERVAL_MS);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    hideStatsTip();
+
+    const tip = document.createElement('div');
+    tip.className = 'dr-stats-tip';
+    tip.innerHTML = `
+        <div class="dr-stats-tip-head">${esc(point.label)}</div>
+        ${point.entries.map(entry => `
+            <div class="dr-stats-tip-row">
+                <span class="dr-stats-tip-date">${esc(entry.dateLabel)}</span>
+                ${esc(entry.serviceName)} · ${esc(entry.eventName)}
+            </div>
+        `).join('')}
+    `;
+
+    wrap.appendChild(tip);
+
+    // Über der Trefferfläche positionieren – aber EINGEKLEMMT in die Karte:
+    // Zentriert über der Spalte (translate(-50%)), soweit der Platz reicht.
+    // Nahe den Kanten wird der Mittelpunkt des Tooltips zur Karteiteile
+    // zurückgeschoben, damit nichts über die Kante ragt.
+    const hitRect = hit.getBoundingClientRect();
+    const wrapRect = wrap.getBoundingClientRect();
+
+    tip.style.left = '0px';   // erst sichtbar machen, dann messen
+    const tipWidth = tip.offsetWidth;
+    const tipHalf = tipWidth / 2;
+
+    const centered = hitRect.left - wrapRect.left + hitRect.width / 2;
+    const clamped = Math.min(
+        Math.max(centered, tipHalf + 8),                 // linke Kante + 8px Puffer
+        wrapRect.width - tipHalf - 8                      // rechte Kante + 8px Puffer
+    );
+
+    tip.style.left = `${clamped}px`;
+    tip.style.top = `${hitRect.top - wrapRect.top}px`;
 }
 
-function stopPolling(): void {
-    if (pollTimer !== null) {
-        clearInterval(pollTimer);
-        pollTimer = null;
-    }
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
+function hideStatsTip(): void {
+    document.querySelector('#dashboardStats .dr-stats-tip')?.remove();
 }
 
-/** Bei Rückkehr in den sichtbaren Tab: sofort ein Poll-Tick. */
-function handleVisibilityChange(): void {
-    if (document.visibilityState !== 'visible') return;
-    void pollTick();
+// ── Statistik: Resize-Handling ───────────────────────────────────────
+
+/**
+ * Beobachtet die Breite der Statistik-Karte und rendert das Diagramm
+ * bei ausreichender Änderung neu – damit es beim Fensterziehen (und beim
+ * Grid-Umbruch der Responsive-Stufen) sofort mitwandert statt auf das
+ * nächste zufällige Neu-Rendern zu warten.
+ *
+ * Schwelle (8px) ignoriert Rundungsrauschen; das rAF-Throttle begrenzt
+ * das Neu-Rendern beim kontinuierlichen Ziehen auf einen Frame-Aufruf.
+ * Die Karte selbst überlebt das Neu-Rendern (nur innerHTML wird getauscht),
+ * deshalb muss der Observer nicht neu gebunden werden.
+ */
+function bindStatsResize(): void {
+    const card = document.getElementById('dashboardStats');
+    if (!card) return;
+
+    lastStatsWidth = card.clientWidth;
+
+    statsResizeObserver = new ResizeObserver(entries => {
+        const width = entries[0]?.contentRect.width ?? 0;
+
+        // Rundungsrauschen und Sub-Pixel-Schwankungen ignorieren
+        if (Math.abs(width - lastStatsWidth) < 8) return;
+
+        if (statsRafId !== null) cancelAnimationFrame(statsRafId);
+        statsRafId = requestAnimationFrame(() => {
+            statsRafId = null;
+            lastStatsWidth = width;
+            renderStats();
+        });
+    });
+
+    statsResizeObserver.observe(card);
 }

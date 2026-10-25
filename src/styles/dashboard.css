@@ -1,12 +1,11 @@
 /* =========================================================
    DienstRadar – dashboard.css
-   Dashboard: Hero + dreispaltiges Grid (1fr 1fr 2fr).
+   Dashboard: Hero + dreispaltiges Grid (1fr 1fr 2fr),
+   Karten, Pills, Quick-Actions, Statistik-Diagramm + Tooltip.
 
    Responsive:
    - < 75rem: Spalte 3 rutscht unter Spalten 1+2 (volle Breite)
    - < 48rem: alles gestapelt
-   - Container-Queries auf den Karten steuern die Button-Varianten
-     (abhängig von der KARTENbreite, nicht vom Fenster)
    ========================================================= */
 
 /* ── Wrapper: volle Breite, vertikaler Rhythmus über gap ─── */
@@ -28,7 +27,7 @@
 .dr-root .dr-hero {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: flex-start;   /* Button sitzt auf Titelhöhe, nicht zentriert */
   gap: calc(var(--spacing, 0.25rem) * 5);
 }
 
@@ -113,10 +112,14 @@
   white-space: nowrap;
 }
 
-/* Hero-Button rechts, vertikal zentriert; rutscht bei knappem Platz um */
+/* Hero-Button rechts, auf Titelhöhe */
 .dr-root .dr-hero-btn {
   margin-left: auto;
-  margin-top: calc(var(--spacing, 0.25rem) * 1); 
+}
+
+.dr-root .dr-dashboard-hero-empty {
+  color: var(--color-gray-secondary, #475569);
+  margin: 0;
 }
 
 /* ── Grid: 1fr 1fr 2fr ───────────────────────────────────── */
@@ -142,12 +145,9 @@
 
 .dr-root .dr-dashboard-card {
   margin-bottom: 0;
-  /* Container-Query-Anker: die Button-Varianten der Einträge
-     richten sich nach der Breite dieser Karte */
-  container-type: inline-size;
 }
 
-/* ── Listen (Anstehende Dienste + Anfragen) ──────────────── */
+/* ── Listen (Anstehende Dienste + Anfragen + Offene Dienste) ── */
 
 .dr-root .dr-dashboard-list {
   display: flex;
@@ -166,42 +166,25 @@
 }
 
 /* Kopfzeile: Der Button floatet rechts, Datum + Titel fließen als
-   normaler Text um ihn herum. flow-root hält den Float innerhalb
-   der Kopfzeile, damit er nicht in die Diensteliste ragt. */
+   Text um ihn herum. flow-root hält den Float innerhalb der Kopfzeile. */
 .dr-root .dr-dashboard-entry-head {
   display: flow-root;
 }
 
 .dr-root .dr-dashboard-entry-date {
-  flex: 0 0 auto;
   font-size: var(--text-body-s, 0.8125rem);
   color: var(--color-gray-secondary, #475569);
   white-space: nowrap;
+  margin-right: calc(var(--spacing, 0.25rem) * 2);
 }
 
-/* flex-basis = max-content: kurzer Titel bleibt neben dem Datum,
-   langer Titel weicht komplett in die nächste Zeile */
 .dr-root .dr-dashboard-entry-event {
   font-size: var(--text-body-m, 0.875rem);
   font-weight: var(--font-weight-medium, 500);
   color: var(--color-gray-primary, #0f172a);
 }
 
-/* Zugesagte Dienste unter der Kopfzeile – bewusst kleiner und heller
-   als der Eventname, damit Titel und Dienste klar unterscheidbar sind */
-.dr-root .dr-dashboard-entry-services {
-  margin-top: calc(var(--spacing, 0.25rem) * 1);
-  margin-left: calc(var(--spacing, 0.25rem) * 3);   /* leicht eingerückt */
-  padding-left: calc(var(--spacing, 0.25rem) * 2);
-  border-left: 2px solid var(--color-gray-divider, #e2e8f0);
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--spacing, 0.25rem) * 0.5);
-  font-size: var(--text-body-s, 0.8125rem);
-  color: var(--color-gray-secondary, #475569);
-}
-
-/* Button schwebt rechts; der Text der Kopfzeile umfließt ihn.
+/* Button: schwebt rechts; der Text der Kopfzeile umfließt ihn.
    Zeilen UNTER der Button-Unterkante laufen bis an den rechten Rand. */
 .dr-root .dr-entry-btn {
   float: right;
@@ -212,80 +195,27 @@
   white-space: nowrap;
 }
 
-.dr-root .dr-entry-btn--bottom {
-  display: inline-flex;
-  align-self: flex-end;
-  margin-top: calc(var(--spacing, 0.25rem) * 2);
-}
-
-/* Ab genügend Kartenbreite: oberer Button an, unterer aus.
-   Stellschraube: der 22rem-Wert (~352px Kartenbreite). */
-@container (min-width: 22rem) {
-  .dr-root .dr-entry-btn--top {
-    display: inline-flex;
-  }
-
-  .dr-root .dr-entry-btn--bottom {
-    display: none;
-  }
-}
-
-/* Anfragen-Karte nutzt die einfache Variante (Datum + Textzeile) */
-.dr-root .dr-dashboard-entry-main {
-  font-size: var(--text-body-m, 0.875rem);
-  color: var(--color-gray-primary, #0f172a);
-}
-
-.dr-root .dr-dashboard-entry-main a {
-  color: var(--color-accent-bright, #2563eb);
-  text-decoration: underline;
-}
-
-.dr-root .dr-empty {
+/* Zugesagte Dienste unter der Kopfzeile – bewusst kleiner und heller
+   als der Eventname, damit Titel und Dienste klar unterscheidbar sind */
+.dr-root .dr-dashboard-entry-services {
+  margin-top: calc(var(--spacing, 0.25rem) * 1);
+  margin-left: calc(var(--spacing, 0.25rem) * 3);
+  padding-left: calc(var(--spacing, 0.25rem) * 2);
+  border-left: 2px solid var(--color-gray-divider, #e2e8f0);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing, 0.25rem) * 0.5);
+  font-size: var(--text-body-s, 0.8125rem);
   color: var(--color-gray-secondary, #475569);
-  margin: 0;
 }
 
-/* ── Responsive ──────────────────────────────────────────── */
+/* ── Offene Dienste: hervorgehobene Pills ────────────────── */
 
-/* Unter 1200px (Sidebar-Breakpoint): Spalte 3 unter 1+2 */
-@media (max-width: 75rem) {
-  .dr-root .dr-dashboard-grid {
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      "col1 col2"
-      "col3 col3";
-  }
-}
-
-/* Unter 768px (Formular-Breakpoint): alles gestapelt */
-@media (max-width: 48rem) {
-  .dr-root .dr-dashboard-grid {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "col1"
-      "col2"
-      "col3";
-  }
-}
-
-/* ── Offene Dienste: Quick-Buttons (nutzt .dr-quick aus form.css) ── */
-
-.dr-root .dr-dashboard-card .dr-quick-buttons {
-  margin-bottom: calc(var(--spacing, 0.25rem) * 3);
-}
-
-/* ── Offene Dienste: markante Darstellung (Warning-Familie) ──
-   Offene Dienste sind handlungsrelevant – gelber Akzent analog
-   zum blauen Hero-Akzentstreifen. Tokens schalten im Dark Mode um. */
-
-/* Die offenen Dienste selbst als gelbe Pills – das ist der
-   eigentliche Marker: „diese Lücken wollen gefüllt werden" */
 .dr-root .dr-open-services {
   flex-direction: row;
   flex-wrap: wrap;
   gap: calc(var(--spacing, 0.25rem) * 1.5);
-  border-left: none;            /* Pills tragen die Farbe, kein Einrückungsstrich nötig */
+  border-left: none;
   margin-left: calc(var(--spacing, 0.25rem) * 3);
   padding-left: 0;
 }
@@ -323,11 +253,43 @@
   font-size: var(--text-body-s, 0.8125rem);
 }
 
+/* Button-Paar in der Anfragen-Karte: bleibt intern UNTEILBAR –
+   „Ablehnen" und „Annehmen" rutschen immer GEMEINSAM in die nächste
+   Zeile, statt einzeln umzubrechen */
+.dr-root .dr-request-buttons {
+  display: flex;
+  flex-wrap: nowrap;          /* intern nie umbrechen */
+  gap: calc(var(--spacing, 0.25rem) * 2);
+}
+
+/* „Zum Event" als Button gestylt (dr-btn--secondary im Markup) –
+   die Regel trägt nur noch das Layout: schiebt die Button-Gruppe
+   nach rechts, wie bisher */
 .dr-root .dr-request-link {
-  margin-right: auto;   /* schiebt die Buttons nach rechts */
-  font-size: var(--text-body-s, 0.8125rem);
+  margin-right: auto;
+  text-decoration: none;   /* Link-Optik unterdrücken, der Button-Stil übernimmt */
+}
+
+/* Anfragen-Karte nutzt die einfache Variante (Datum + Textzeile) */
+.dr-root .dr-dashboard-entry-main {
+  font-size: var(--text-body-m, 0.875rem);
+  color: var(--color-gray-primary, #0f172a);
+}
+
+.dr-root .dr-dashboard-entry-main a {
   color: var(--color-accent-bright, #2563eb);
   text-decoration: underline;
+}
+
+.dr-root .dr-empty {
+  color: var(--color-gray-secondary, #475569);
+  margin: 0;
+}
+
+/* ── Quick-Buttons innerhalb der Karten (Zeitraum) ───────── */
+
+.dr-root .dr-dashboard-card .dr-quick-buttons {
+  margin-bottom: calc(var(--spacing, 0.25rem) * 3);
 }
 
 /* ── Quick-Actions: Sprungkarten zu den anderen Modulen ─── */
@@ -338,16 +300,13 @@
   gap: calc(var(--spacing, 0.25rem) * 2);
 }
 
-/* Gleiche Karten-Logik wie die Person-Karten der Inaktivität:
-   klickbar → Hover zeigt es an (gray-50, die seichte Stufe) */
+/* CT-Button-Stil wie dr-btn--secondary: Light weiß auf Karte,
+   Dark foreground-primary = eine Stufe DUNKLER als die Karte */
 .dr-root .dr-quick-action {
   display: flex;
   align-items: center;
   gap: calc(var(--spacing, 0.25rem) * 3);
   padding: calc(var(--spacing, 0.25rem) * 3);
-  /* CT-Button-Stil wie dr-btn--secondary:
-     Light: weiß auf Karte / Dark: foreground-primary = zinc-800,
-     eine Stufe DUNKLER als die Karte (zinc-700) – klar abgesetzt */
   background: var(--color-foreground-primary, #ffffff);
   color: inherit;
   border: 1px solid var(--color-gray-interactive, #cbd5e1);
@@ -358,8 +317,8 @@
 }
 
 .dr-root .dr-quick-action:hover {
-  /* background-primary schaltet sauber um: Light slate-100 (eine Stufe
-     dunkler als weiß), Dark zinc-900 (eine Stufe dunkler als zinc-800) */
+  /* background-primary schaltet sauber um: Light slate-100,
+     Dark zinc-900 – in beiden Modi eine Stufe dunkler */
   background: var(--color-background-primary, #f1f5f9);
   border-color: var(--color-gray-interactive, #cbd5e1);
 }
@@ -397,4 +356,177 @@
 .dr-root .dr-quick-action-description {
   font-size: var(--text-body-s, 0.8125rem);
   color: var(--color-gray-secondary, #475569);
+}
+
+/* ── Statistik (Spalte 3a) ───────────────────────────────── */
+
+/* 1:1-Pixel-Diagramm: width/height/viewBox = gemessene Pixel, KEINE
+   Skalierung durch den Browser. Breiten-/Höhenanpassung übernimmt das
+   Neu-Rendern via ResizeObserver. */
+.dr-root .dr-stats-svg {
+  display: block;
+  max-width: 100%;
+  margin-top: calc(var(--spacing, 0.25rem) * 2);
+}
+
+.dr-root .dr-stats-bar {
+  fill: var(--color-accent-bright, #2563eb);
+}
+
+.dr-root .dr-stats-line {
+  fill: none;
+  stroke: var(--color-accent-bright, #2563eb);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.dr-root .dr-stats-dot {
+  fill: var(--color-accent-bright, #2563eb);
+}
+
+/* Schrift immer so groß wie der restliche Text (body-s) – möglich,
+   weil das Diagramm 1:1 in echten Pixeln gerendert wird */
+.dr-root .dr-stats-value {
+  fill: var(--color-gray-secondary, #475569);
+  font-size: var(--text-body-s, 0.8125rem);
+  font-weight: var(--font-weight-medium, 500);
+}
+
+.dr-root .dr-stats-xlabel {
+  fill: var(--color-gray-secondary, #475569);
+  font-size: var(--text-body-s, 0.8125rem);
+}
+
+/* ── Statistik: Hover-Tooltip ────────────────────────────── */
+
+.dr-root .dr-stats-wrap {
+  position: relative;   /* Anker für die absolute Positionierung des Tooltips */
+}
+
+.dr-root .dr-stats-tip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 8px));   /* zentriert über der Spalte */
+  /* CT-Flächen-Muster wie bei den Buttons: Light weiß, Dark zinc-800
+     (eine Stufe dunkler als die Karte) – Textfarbe flippt mit,
+     dadurch in BEIDEN Modi lesbar. Kein festes Schwarz mehr. */
+  background: var(--color-foreground-primary, #ffffff);
+  color: var(--color-gray-primary, #0f172a);
+  border: 1px solid var(--color-gray-interactive, #cbd5e1);
+  border-radius: var(--radius-md, 0.375rem);
+  padding: calc(var(--spacing, 0.25rem) * 2) calc(var(--spacing, 0.25rem) * 3);
+  font-size: var(--text-body-s, 0.8125rem);
+  line-height: var(--text-body-s--line-height, 1.125rem);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.25);
+  max-width: min(280px, calc(100% - 16px));
+  pointer-events: none;
+  z-index: 20;
+}
+
+.dr-root .dr-stats-tip-head {
+  font-weight: var(--font-weight-medium, 500);
+  margin-bottom: calc(var(--spacing, 0.25rem) * 1);
+}
+
+.dr-root .dr-stats-tip-row {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dr-root .dr-stats-tip-date {
+  color: color-mix(in srgb, currentColor 70%, transparent);
+  margin-right: calc(var(--spacing, 0.25rem) * 1.5);
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+
+/* Unter 1200px (Sidebar-Breakpoint): Spalte 3 unter 1+2 */
+@media (max-width: 75rem) {
+  .dr-root .dr-dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "col1 col2"
+      "col3 col3";
+  }
+}
+
+/* Unter 768px (Formular-Breakpoint): alles gestapelt */
+@media (max-width: 48rem) {
+  .dr-root .dr-dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "col1"
+      "col2"
+      "col3";
+  }
+}
+
+/* ── Y-Achse: feine Gitterlinien + Tick-Labels ───────────── */
+
+/* gray-divider ist im Dark Mode = Kartenfarbe (zinc-700) → Linien wären
+   unsichtbar. gray-interactive (Dark: zinc-600) ist eine Stufe dunkler
+   und bleibt in BEIDEN Modi sichtbar. */
+.dr-root .dr-stats-grid {
+  stroke: var(--color-gray-interactive, #cbd5e1);
+  stroke-width: 1;
+  opacity: 0.5;   /* dezent halten – im Light Mode sonst zu kräftig */
+}
+
+/* Die Null-Linie (Basisachse) einen Hauch kräftiger, ohne opacity */
+.dr-root .dr-stats-grid--axis {
+  stroke: var(--color-gray-interactive, #cbd5e1);
+  opacity: 1;
+}
+
+.dr-root .dr-stats-ylabel {
+  fill: var(--color-gray-secondary, #475569);
+  font-size: var(--text-body-s, 0.8125rem);
+}
+
+/* ── Statistik: Layout (Buttons neben Diagramm bei breiter Karte) ── */
+
+/* Container-Query-Anker: die Karte misst ihre eigene Innenbreite */
+.dr-root .dr-stats-card {
+  container-type: inline-size;
+}
+
+/* Standard (schmale Karte): Buttons oben, Diagramm darunter */
+.dr-root .dr-stats-body {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing, 0.25rem) * 4);
+  min-width: 0;
+}
+
+.dr-root .dr-stats-controls {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing, 0.25rem) * 2);
+}
+
+/* Die alte margin-bottom-Regel der Quick-Buttons würde hier die
+   gaps doppeln – in der Stats-Karte übernimmt der gap das Spacing */
+.dr-root .dr-stats-controls .dr-quick-buttons {
+  margin-bottom: 0;
+}
+
+/* Ab 800px Karten-INNENbreite (= 50rem Containerbreite): Diagramm
+   rechts neben die Buttons. Der Schwellwert muss zur isRowLayout-
+   Berechnung in renderStats() passen (cardInner >= 800). */
+@container (min-width: 50rem) {
+  .dr-root .dr-stats-body {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .dr-root .dr-stats-controls {
+    /* MUSS zur controlsWidth-Berechnung in renderStats() passen (240px) */
+    flex: 0 0 15rem;
+  }
+
+  .dr-root .dr-stats-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
 }
