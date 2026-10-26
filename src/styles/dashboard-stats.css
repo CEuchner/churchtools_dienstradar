@@ -1,0 +1,158 @@
+/* =========================================================
+   DienstRadar – dashboard-stats.css
+   Statistik-Karte: Diagramm (1:1-Pixel-SVG), Gitterlinien,
+   Hover-Tooltip, Buttons-neben-Diagramm-Layout.
+   ========================================================= */
+
+/* 1:1-Pixel-Diagramm: width/height/viewBox = gemessene Pixel, KEINE
+   Skalierung durch den Browser. Breiten-/Höhenanpassung übernimmt das
+   Neu-Rendern via ResizeObserver. */
+.dr-root .dr-stats-svg {
+  display: block;
+  max-width: 100%;
+  margin-top: calc(var(--spacing, 0.25rem) * 2);
+}
+
+.dr-root .dr-stats-bar {
+  fill: var(--color-accent-bright, #2563eb);
+}
+
+.dr-root .dr-stats-line {
+  fill: none;
+  stroke: var(--color-accent-bright, #2563eb);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.dr-root .dr-stats-dot {
+  fill: var(--color-accent-bright, #2563eb);
+}
+
+/* Schrift immer so groß wie der restliche Text (body-s) – möglich,
+   weil das Diagramm 1:1 in echten Pixeln gerendert wird */
+.dr-root .dr-stats-value {
+  fill: var(--color-gray-secondary, #475569);
+  font-size: var(--text-body-s, 0.8125rem);
+  font-weight: var(--font-weight-medium, 500);
+}
+
+.dr-root .dr-stats-xlabel {
+  fill: var(--color-gray-secondary, #475569);
+  font-size: var(--text-body-s, 0.8125rem);
+}
+
+/* ── Y-Achse: feine Gitterlinien + Tick-Labels ───────────── */
+
+/* gray-divider ist im Dark Mode = Kartenfarbe (zinc-700) → Linien wären
+   unsichtbar. gray-interactive (Dark: zinc-600) ist eine Stufe dunkler
+   und bleibt in BEIDEN Modi sichtbar. */
+.dr-root .dr-stats-grid {
+  stroke: var(--color-gray-interactive, #cbd5e1);
+  stroke-width: 1;
+  opacity: 0.5;   /* dezent halten – im Light Mode sonst zu kräftig */
+}
+
+/* Die Null-Linie (Basisachse) einen Hauch kräftiger, ohne opacity */
+.dr-root .dr-stats-grid--axis {
+  stroke: var(--color-gray-interactive, #cbd5e1);
+  opacity: 1;
+}
+
+.dr-root .dr-stats-ylabel {
+  fill: var(--color-gray-secondary, #475569);
+  font-size: var(--text-body-s, 0.8125rem);
+}
+
+/* ── Hover-Tooltip ───────────────────────────────────────── */
+
+.dr-root .dr-stats-wrap {
+  position: relative;   /* Anker für die absolute Positionierung des Tooltips */
+}
+
+.dr-root .dr-stats-tip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 8px));   /* zentriert über der Spalte */
+  /* CT-Flächen-Muster wie bei den Buttons: Light weiß, Dark zinc-800
+     (eine Stufe dunkler als die Karte) – Textfarbe flippt mit,
+     dadurch in BEIDEN Modi lesbar. Kein festes Schwarz mehr. */
+  background: var(--color-foreground-primary, #ffffff);
+  color: var(--color-gray-primary, #0f172a);
+  border: 1px solid var(--color-gray-interactive, #cbd5e1);
+  border-radius: var(--radius-md, 0.375rem);
+  padding: calc(var(--spacing, 0.25rem) * 2) calc(var(--spacing, 0.25rem) * 3);
+  font-size: var(--text-body-s, 0.8125rem);
+  line-height: var(--text-body-s--line-height, 1.125rem);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.25);
+  max-width: min(280px, calc(100% - 16px));
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* Fixiertes Tooltip (per Klick): blauer Rand als Sichtfeedback */
+.dr-root .dr-stats-tip--pinned {
+  border-color: var(--color-accent-bright, #2563eb);
+}
+
+.dr-root .dr-stats-tip-head {
+  font-weight: var(--font-weight-medium, 500);
+  margin-bottom: calc(var(--spacing, 0.25rem) * 1);
+}
+
+.dr-root .dr-stats-tip-row {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dr-root .dr-stats-tip-date {
+  color: color-mix(in srgb, currentColor 70%, transparent);
+  margin-right: calc(var(--spacing, 0.25rem) * 1.5);
+}
+
+/* ── Layout: Buttons neben Diagramm bei breiter Karte ────── */
+
+/* Container-Query-Anker: die Karte misst ihre eigene Innenbreite */
+.dr-root .dr-stats-card {
+  container-type: inline-size;
+}
+
+/* Standard (schmale Karte): Buttons oben, Diagramm darunter */
+.dr-root .dr-stats-body {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing, 0.25rem) * 4);
+  min-width: 0;
+}
+
+.dr-root .dr-stats-controls {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing, 0.25rem) * 2);
+}
+
+/* Die margin-bottom-Regel der Quick-Buttons würde hier die
+   gaps doppeln – in der Stats-Karte übernimmt der gap das Spacing */
+.dr-root .dr-stats-controls .dr-quick-buttons {
+  margin-bottom: 0;
+}
+
+/* Ab 800px Karten-INNENbreite (= 50rem Containerbreite): Diagramm
+   rechts neben die Buttons. Der Schwellwert muss zur isRowLayout-
+   Berechnung in renderStats() passen (cardInner >= 800). */
+@container (min-width: 50rem) {
+  .dr-root .dr-stats-body {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .dr-root .dr-stats-controls {
+    /* MUSS zur controlsWidth-Berechnung in renderStats() passen (240px) */
+    flex: 0 0 15rem;
+  }
+
+  .dr-root .dr-stats-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
