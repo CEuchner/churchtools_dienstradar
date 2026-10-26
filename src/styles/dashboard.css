@@ -1,6 +1,6 @@
 /* =========================================================
    DienstRadar – dashboard.css
-   Dashboard: Hero + dreispaltiges Grid (1fr 1fr 2fr),
+   Dashboard: Hero + dreispaltiges Grid (2fr 2fr 3fr),
    Karten, Pills, Quick-Actions, Statistik-Diagramm + Tooltip.
 
    Responsive:
@@ -122,11 +122,11 @@
   margin: 0;
 }
 
-/* ── Grid: 1fr 1fr 2fr ───────────────────────────────────── */
+/* ── Grid: 2fr 2fr 3fr ───────────────────────────────────── */
 
 .dr-root .dr-dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 2fr;
+  grid-template-columns: 2fr 2fr 3fr;
   grid-template-areas: "col1 col2 col3";
   gap: calc(var(--spacing, 0.25rem) * 4);
   align-items: start;
@@ -423,6 +423,11 @@
   z-index: 20;
 }
 
+/* Fixiertes Tooltip (per Klick): blauer Rand als Sichtfeedback */
+.dr-root .dr-stats-tip--pinned {
+  border-color: var(--color-accent-bright, #2563eb);
+}
+
 .dr-root .dr-stats-tip-head {
   font-weight: var(--font-weight-medium, 500);
   margin-bottom: calc(var(--spacing, 0.25rem) * 1);
@@ -441,8 +446,10 @@
 
 /* ── Responsive ──────────────────────────────────────────── */
 
-/* Unter 1200px (Sidebar-Breakpoint): Spalte 3 unter 1+2 */
-@media (max-width: 75rem) {
+/* Unter 1000px: Spalte 3 unter 1+2. Bewusst SPÄTER als der Sidebar-
+   Breakpoint (75rem): Die Sidebar verschwindet bei 1200px, der Content
+   bekommt dadurch Platz zurück – die Spalten halten deshalb länger durch. */
+@media (max-width: 62.5rem) {
   .dr-root .dr-dashboard-grid {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:

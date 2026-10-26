@@ -91,7 +91,7 @@ export default function Dashboard() {
 
       <div class="dr-content dr-content-full">
         <div class="dr-dashboard-hero card" id="dashboardHero">
-          <h2 class="dr-dashboard-hero-title">Nächstes Event</h2>
+          <h2 class="dr-dashboard-hero-title">Nächster Dienst</h2>
           <p class="dr-empty">Wird geladen…</p>
         </div>
 
@@ -179,6 +179,12 @@ let requestActionHandler: ((event: Event) => void) | null = null;
 let statsHandler: ((event: Event) => void) | null = null;
 let statsTipHandler: ((event: Event) => void) | null = null;
 let statsTipLeaveHandler: (() => void) | null = null;
+
+/** Index der per Klick fixierten Diagramm-Spalte – null = nichts fixiert. */
+let pinnedStatsIndex: number | null = null;
+
+/** Klick-Listener (document-Ebene) für Fixieren/Lösen des Tooltips. */
+let statsTipClickHandler: ((event: Event) => void) | null = null;
 
 // ── Statistik: Resize-Handling ───────────────────────────────────────
 
@@ -275,6 +281,11 @@ export function destroy(): void {
         document.getElementById('dashboardStats')
             ?.removeEventListener('pointerleave', statsTipLeaveHandler);
         statsTipLeaveHandler = null;
+    }
+
+    if (statsTipClickHandler) {
+        document.removeEventListener('click', statsTipClickHandler);
+        statsTipClickHandler = null;
     }
 
     if (statsResizeObserver) {
@@ -607,12 +618,13 @@ function renderRequests(): void {
         );
 
     if (open.length === 0) {
-        card.innerHTML = `
-            <h2>Anfragen</h2>
-            <p class="dr-empty">Keine offenen Anfragen.</p>
-        `;
+        // Leer → Karte komplett ausblenden (wie die Schnellzugriff-Karte).
+        // Bewusst nur hier: Anstehende Dienste und Offene Dienste haben
+        // immer sinnvolle Inhalte und bleiben stehen.
+        card.style.display = 'none';
         return;
     }
+    card.style.display = '';
 
     const items = open.map(request => {
         const url = buildEventUrl(request.event!.id);
@@ -654,6 +666,7 @@ function renderRequests(): void {
 
 function renderStats(): void {
     const card = document.getElementById('dashboardStats');
+    pinnedStatsIndex = null;
     if (!card) return;
 
     const win = STATS_WINDOWS.find(w => w.id === statsWindowId) ?? STATS_WINDOWS[1];
@@ -778,21 +791,24 @@ function renderQuickActions(): void {
 
 // ── Statistik: Hover-Tooltip ─────────────────────────────────────────
 
+// ── Statistik: Hover-Tooltip + Klick-Fixierung ───────────────────────
+
 /**
- * Zeigt pro Diagramm-Spalte ein Tooltip mit den einzelnen Einteilungen
- * („welche Dienste wann"). Delegation auf der Karte – überlebt das
- * Neu-Rendern der Buttons und des Diagramms, wird in destroy() abgeräumt.
+ * Detail-Karten („welche Dienste wann") erscheinen beim Hover – und
+ * bleiben nach KLICK auf eine Diagramm-Spalte stehen (wichtig für
+ * Touch-Geräte, wo es kein Hover gibt). Ein Klick irgendwo anders
+ * (auch auf einen Button der Karte oder außerhalb) löst die Fixierung.
  */
 function bindStatsTooltip(): void {
     const card = document.getElementById('dashboardStats');
     if (!card) return;
 
+    // Hover: zeigt das Tooltip – außer etwas ist fixiert (dann gewinnt der Pin)
     statsTipHandler = (event: Event) => {
+        if (pinnedStatsIndex !== null) return;
+
         const hit = (event.target as Element).closest<SVGRectElement>('[data-stats-index]');
-        if (!hit) {
-            hideStatsTip();
-            return;
-        }
+        if (!hit) return;   // Hovern außerhalb der Spalten: nichts ändern
 
         const index = parseInt(hit.dataset.statsIndex ?? '', 10);
         const point = lastStatsPoints[index];
@@ -804,10 +820,43 @@ function bindStatsTooltip(): void {
         showStatsTip(hit, point);
     };
 
-    statsTipLeaveHandler = () => hideStatsTip();
+    // Verlassen der Spalten versteckt nur, wenn NICHT fixiert
+    statsTipLeaveHandler = () => {
+        if (pinnedStatsIndex === null) hideStatsTip();
+    };
 
     card.addEventListener('pointerover', statsTipHandler);
     card.addEventListener('pointerleave', statsTipLeaveHandler);
+
+    // Klick: auf eine Spalte → fixieren (bzw. auf eine andere umspringen);
+    // irgendwo anders → lösen. document-Ebene, damit auch Klicks außerhalb
+    // der Karte das fixierte Tooltip lösen.
+    statsTipClickHandler = (event: Event) => {
+        const hit = (event.target as Element).closest<SVGRectElement>('[data-stats-index]');
+
+        if (!hit) {
+            unpinStats();
+            return;
+        }
+
+        const index = parseInt(hit.dataset.statsIndex ?? '', 10);
+        const point = lastStatsPoints[index];
+        if (!point || point.entries.length === 0) {
+            unpinStats();
+            return;
+        }
+
+        pinnedStatsIndex = index;
+        showStatsTip(hit, point);
+    };
+
+    document.addEventListener('click', statsTipClickHandler);
+}
+
+/** Fixierung lösen und Tooltip entfernen. */
+function unpinStats(): void {
+    pinnedStatsIndex = null;
+    hideStatsTip();
 }
 
 /** Baut das Tooltip über der gehoverten Spalte. */
@@ -819,6 +868,8 @@ function showStatsTip(hit: SVGRectElement, point: StatsPoint): void {
 
     const tip = document.createElement('div');
     tip.className = 'dr-stats-tip';
+    // Fixierte Tooltips bekommen einen blauen Rand als Sichtfeedback
+    tip.classList.toggle('dr-stats-tip--pinned', pinnedStatsIndex !== null);
     tip.innerHTML = `
         <div class="dr-stats-tip-head">${esc(point.label)}</div>
         ${point.entries.map(entry => `

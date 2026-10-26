@@ -34,12 +34,11 @@ export interface StatsWindow {
 
 /** Zeitraum-Quick-Buttons. */
 export const STATS_WINDOWS: StatsWindow[] = [
-    { id: '4w', label: '4 W',      days: 28,  bucket: 'week' },
-    { id: '8w', label: '8 W',      days: 56,  bucket: 'week' },
-    { id: '12w', label: '12 W',    days: 84,  bucket: 'week' },
-    { id: 'q',  label: 'Quartal',  days: 91,  bucket: 'week' },
-    { id: 'hj', label: 'Halbjahr', days: 182, bucket: 'month' },
-    { id: 'y',  label: 'Jahr',     days: 365, bucket: 'month' },
+    { id: '4w', label: '4 W',     days: 28,  bucket: 'week' },
+    { id: '8w', label: '8 W',     days: 56,  bucket: 'week' },
+    { id: '12w', label: '12 W',   days: 84,  bucket: 'week' },
+    { id: 'hj', label: '6 M',     days: 182, bucket: 'month' },
+    { id: 'y',  label: '12 M',    days: 365, bucket: 'month' },
 ];
 
 /** Eine einzelne geleistete Einteilung – für das Hover-Tooltip. */
@@ -332,8 +331,10 @@ export function renderStatsChart(
         content = `<polyline points="${coords}" class="dr-stats-line" />${dots}`;
     }
 
-    // ── X-Beschriftungen: alle, wenn Platz; sonst ausdünnen ─────────────
-    const labelEvery = step >= 40 ? 1 : step >= 22 ? 2 : 3;
+    // X-Beschriftungen: ausdünnen, BEVOR sie kollidieren.
+    // Schwellen auf KW-Labels (~40px) abgestimmt: Bei step < 56 jede zweite,
+    // bei step < 32 jede dritte, sonst alle.
+    const labelEvery = step >= 56 ? 1 : step >= 32 ? 2 : 3;
     const labels = points.map((p, i) =>
         i % labelEvery === 0
             ? `<text x="${xCenter(i)}" y="${height - 4}" text-anchor="middle"
