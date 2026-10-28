@@ -2,7 +2,8 @@ import { showStatus } from '../../components/toast';
 import { loadUserPermissions } from '../../api/permissions';
 import { loadServiceRequests } from '../../api/servicerequests';
 import {
-    loadDashboardEvents,
+    loadOwnEvents,
+    loadOpenEvents,
     getPersonId,
     getServiceMetaMap,
     getServices,
@@ -92,10 +93,12 @@ export async function init(): Promise<void> {
         const personId = await getPersonId();
         const personIdentifier = String(personId);
 
-        // …dann alles Weitere parallel – inkl. der Anfragen vom
-        // dedizierten Endpunkt
-        const [events, serviceNames, services, perms, requestList] = await Promise.all([
-            loadDashboardEvents(),
+        // …dann alles Weitere parallel – jetzt über ZWEI Event-Quellen:
+        // ownEvents (nur eigene Events, 12 M zurück + Zukunft) und
+        // openEvents (3-Monats-Fenster mit Einteilungen)
+        const [ownEvents, openEvents, serviceNames, services, perms, requestList] = await Promise.all([
+            loadOwnEvents(personId),
+            loadOpenEvents(),
             getServiceMetaMap(),
             getServices(),
             loadUserPermissions(),
@@ -111,11 +114,12 @@ export async function init(): Promise<void> {
         dashboardState.services = services;
         dashboardState.perms = perms;
         dashboardState.requests = requestList;
-        dashboardState.events = events;
+        dashboardState.ownEvents = ownEvents;
+        dashboardState.openEvents = openEvents;
 
-        const upcoming = getUpcomingOwnEvents(events, personIdentifier);
+        const upcoming = getUpcomingOwnEvents(ownEvents, personIdentifier);
         dashboardState.upcomingEntries = upcoming;
-        const openEntries = getOpenServices(events, services, perms);
+        const openEntries = getOpenServices(openEvents, services, perms);
         dashboardState.openEntries = openEntries;
 
         renderHero(upcoming[0], serviceNames);

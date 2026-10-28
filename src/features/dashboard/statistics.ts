@@ -12,14 +12,20 @@ import type { ServiceMeta } from './data';
  *
  * Reine Aggregation über den bestehenden Event-Cache – kein eigener
  * API-Aufruf. Gezählt werden eigene ZUGESAGTE Einteilungen in der
- * VERGANGENHEIT (bis einschließlich heute, rückwärts bis zum
- * Zeitraum-Start).
+ * VERGANGENHEIT.
+ *
+ * Zeitgrenzen-Prinzip (Variante „Cutoff am Bucket-Anfang"):
+ * Der Zähl-Untergrenze ist der ANFANG des ersten Buckets, nicht der
+ * exakte Lookback-Stichtag. Dadurch ist der erste Bucket vollständig –
+ * „12 M" zählt z. B. den gesamten ältesten Monat, auch wenn der
+ * Stichtag mitten in ihm liegt. Dasselbe gilt für Wochen-Buckets
+ * (Cutoff = Wochenanfang). bucketStartFor() ist die EINZIGE Quelle
+ * dieser Grenze – Achse (buildBuckets) und Filter (computeStats)
+ * leiten sich beide daraus ab und können nicht auseinanderlaufen.
  *
  * Zusätzlich zu den Counts sammelt computeStats pro Bucket die
  * EINZELNEN Einteilungen (StatsEntry) – die Grundlage für das
  * Hover-Tooltip am Diagramm („welche Dienste wann").
- *
- * Das Zeichnen des Diagramms liegt in stats-chart.ts.
  */
 
 export type StatsMode = 'individual' | 'perEvent' | 'perDay';
@@ -28,7 +34,7 @@ export type StatsChart = 'bars' | 'line';
 export interface StatsWindow {
     id: string;
     label: string;
-    /** Lookback in Tagen. */
+    /** Lookback in Tagen (ungefähre Größe – gerundet auf volle Buckets). */
     days: number;
     /** Bucket-Größe: Wochen bis Quartal, Monate ab Halbjahr. */
     bucket: 'week' | 'month';
@@ -83,25 +89,42 @@ function bucketKeyFor(date: Date, bucket: 'week' | 'month'): string {
     return `${date.getFullYear()}-${date.getMonth()}`;
 }
 
+/**
+ * Start des ERSTEN Buckets – und damit die Zähl-Untergrenze.
+ *
+ * Bewusst am Bucket-Anfang statt exakt am Lookback-Stichtag:
+ * Der erste Bucket ist dadurch VOLLSTÄNDIG (alle seine Dienste werden
+ * gezählt), und Achse und Filter nutzen dieselbe Grenze.
+ *
+ * Wochen-Buckets: Montag der Woche, die den Stichtag enthält.
+ * Monats-Buckets: 1. des Monats, der den Stichtag enthält.
+ */
+function bucketStartFor(now: Date, win: StatsWindow): Date {
+    const cursor = startOfDay(now);
+    cursor.setDate(cursor.getDate() - win.days);
+
+    if (win.bucket === 'week') {
+        return startOfWeek(cursor);
+    }
+    return new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+}
+
 /** Alle Buckets des Zeitraums (auch leere) – stabil für die X-Achse. */
 function buildBuckets(win: StatsWindow, now: Date): Array<{ key: string; label: string }> {
     const buckets: Array<{ key: string; label: string }> = [];
+    const start = bucketStartFor(now, win);
 
     if (win.bucket === 'week') {
-        const cursor = startOfWeek(now);
-        cursor.setDate(cursor.getDate() - win.days);
-        const first = startOfWeek(cursor);
+        const first = startOfWeek(start);
+        const currentWeek = startOfWeek(now);
 
-        while (first.getTime() <= now.getTime()) {
+        for (let w = new Date(first); w.getTime() <= currentWeek.getTime(); w.setDate(w.getDate() + 7)) {
             buckets.push({
-                key: toLocalDateString(first),
-                label: `KW ${isoWeekNumber(first)}`,
+                key: toLocalDateString(w),
+                label: `KW ${isoWeekNumber(w)}`,
             });
-            first.setDate(first.getDate() + 7);
         }
     } else {
-        const start = startOfDay(now);
-        start.setDate(start.getDate() - win.days);
         const startMonth = new Date(start.getFullYear(), start.getMonth(), 1);
         const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
@@ -127,8 +150,10 @@ export function computeStats(
 ): StatsPoint[] {
     const today = startOfDay(new Date());
 
-    const cutoff = startOfDay(today);
-    cutoff.setDate(cutoff.getDate() - win.days);
+    // Zähl-Untergrenze = Anfang des ersten Buckets (siehe Header-Kommentar):
+    // Der älteste Monat/die älteste Woche zählt VOLLSTÄNDIG, auch wenn der
+    // Lookback-Stichtag mitten in ihm liegt.
+    const cutoff = bucketStartFor(today, win);
 
     // Bis einschließlich HEUTE zählen – ein heute Vormittag geleisteter
     // Dienst liegt nach Mitternacht und würde sonst stillschweigend fehlen

@@ -6,7 +6,7 @@ import {
     undoServiceRequest,
     loadServiceRequests,
 } from '../../api/servicerequests';
-import { loadDashboardEvents, resetDashboardEvents } from './data';
+import { loadOwnEvents, loadOpenEvents, resetDashboardEvents } from './data';
 import { getUpcomingOwnEvents, getOpenServices } from './derive';
 import { renderHero, renderUpcomingList, renderOpenServices, renderRequests } from './cards';
 import { renderStats } from './stats-ui';
@@ -67,23 +67,28 @@ function handleVisibilityChange(): void {
 // ── Gemeinsamer Neu-Lade-Weg ─────────────────────────────────────────
 
 /**
- * Lädt Events und Anfragen frisch und baut ALLE Karten neu – der gemeinsame
- * Weg nach Annehmen, Ablehnen, Undo UND Polling-Änderung.
+ * Lädt BEIDE Event-Quellen und die Anfragen frisch und baut ALLE Karten
+ * neu – der gemeinsame Weg nach Annehmen, Ablehnen, Undo UND
+ * Polling-Änderung. Seit der Zwei-Quellen-Umstellung deutlich billiger:
+ * ownEvents (nur eigene Events) und openEvents (3-Monats-Fenster)
+ * laufen parallel.
  */
 export async function reloadAll(): Promise<void> {
     resetDashboardEvents();
 
-    const [events, requestList] = await Promise.all([
-        loadDashboardEvents(),
+    const [ownEvents, openEvents, requestList] = await Promise.all([
+        loadOwnEvents(dashboardState.personId),
+        loadOpenEvents(),
         loadServiceRequests(dashboardState.personId),
     ]);
     dashboardState.requests = requestList;
-    dashboardState.events = events;
+    dashboardState.ownEvents = ownEvents;
+    dashboardState.openEvents = openEvents;
 
-    const upcoming = getUpcomingOwnEvents(events, dashboardState.personIdentifier);
+    const upcoming = getUpcomingOwnEvents(ownEvents, dashboardState.personIdentifier);
     dashboardState.upcomingEntries = upcoming;
     const openEntries = dashboardState.perms
-        ? getOpenServices(events, dashboardState.services, dashboardState.perms)
+        ? getOpenServices(openEvents, dashboardState.services, dashboardState.perms)
         : [];
     dashboardState.openEntries = openEntries;
 

@@ -23,7 +23,7 @@ export function renderStats(): void {
 
     const win = STATS_WINDOWS.find(w => w.id === dashboardState.statsWindowId) ?? STATS_WINDOWS[1];
     const points = computeStats(
-        dashboardState.events,
+        dashboardState.ownEvents,
         dashboardState.personIdentifier,
         win,
         dashboardState.statsMode,
